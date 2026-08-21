@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, KeyboardEvent, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useState } from "react";
 
 import styles from "./account.module.css";
 
@@ -48,6 +48,19 @@ export function AuthPanel() {
   const [feedback, setFeedback] = useState<
     { kind: "error" | "success"; message: string } | undefined
   >();
+
+  useEffect(() => {
+    const error = new URLSearchParams(window.location.search).get("error");
+    const messages: Record<string, string> = {
+      google_unavailable: "El acceso con Google no está configurado todavía.",
+      google_denied: "Cancelaste el acceso con Google.",
+      google_inactive: "Esta cuenta está desactivada. Escribe a operaciones.",
+      google_failed: "No pudimos completar el acceso con Google. Inténtalo de nuevo.",
+    };
+    if (error && messages[error]) {
+      setFeedback({ kind: "error", message: messages[error] });
+    }
+  }, []);
 
   function selectMode(nextMode: AuthMode) {
     setMode(nextMode);
@@ -305,6 +318,13 @@ export function AuthPanel() {
                   : "Crear cuenta"}
             </button>
           </form>
+
+          <p className={styles.authDivider} role="separator">
+            o
+          </p>
+          <a className={styles.oauthButton} href="/api/v1/auth/google/start">
+            Continuar con Google
+          </a>
 
           <p className={styles.legalCopy}>
             Al crear una cuenta aceptas el tratamiento de tus datos según nuestra{" "}

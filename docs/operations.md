@@ -76,7 +76,7 @@ confirmó un fallo terminal.
 
 La interfaz interna está en `/admin` (no se indexa). Tras iniciar sesión en `/mi-cuenta-2`, un `admin` entra al hub completo: reservas, personal, clientes, pagos, catálogo, calendario y equipo. `support` solo ve conciliación de Yape/transferencia y reintentos Stripe.
 
-`pnpm db:seed` crea siempre `nina.v@example.com` / `Reludcir#Admin26` (rol admin, nombre Operaciones Reludcir), o los valores de `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` si los defines. Esas credenciales son solo de desarrollo.
+`pnpm db:seed` crea siempre `nina.v@example.com` / `Reludcir#Admin26` (rol admin, nombre Operaciones Reludcir), o los valores de `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` si los defines. Esas credenciales son solo de desarrollo. El mismo correo puede entrar con Google si configuras `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET`; el callback es `{NEXT_PUBLIC_SITE_URL}/api/v1/auth/google/callback`. Sin esas claves, `/api/v1/auth/google/start` redirige a `/mi-cuenta-2?error=google_unavailable`.
 
 En producción, registra una cuenta normal y cambia el rol con una operación SQL auditada:
 
@@ -117,6 +117,7 @@ La aplicación funciona en local con PostgreSQL, seed y pagos manuales. Antes de
 | `YAPE_NUMBER` / `YAPE_HOLDER` / `BANK_*` | Instrucciones de pago manual |
 | `WHATSAPP_*` | Plantillas Cloud API (opcional) |
 | `SEED_ADMIN_*` | Solo local; no definir en producción |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Login opcional con Google; el redirect URI debe coincidir con el callback |
 
 Sin `STRIPE_SECRET_KEY` el checkout con tarjeta responde `503 PAYMENT_UNAVAILABLE`; Yape y transferencia siguen disponibles. Sin `CRON_SECRET` las rutas internas responden `503 NOT_CONFIGURED`.
 

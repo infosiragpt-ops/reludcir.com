@@ -177,6 +177,7 @@
 .tab:focus-visible,
 .activeTab:focus-visible,
 .primaryButton:focus-visible,
+.oauthButton:focus-visible,
 .actionBar button:focus-visible,
 .closeButton:focus-visible,
 .primaryLink:focus-visible {
@@ -218,6 +219,42 @@
 .primaryButton:disabled {
   cursor: wait;
   opacity: 0.65;
+}
+
+.authDivider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.15rem 0 0;
+  color: var(--color-muted, #526762);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: lowercase;
+}
+
+.authDivider::before,
+.authDivider::after {
+  flex: 1;
+  height: 1px;
+  background: var(--color-border, #dce3ec);
+  content: "";
+}
+
+.oauthButton {
+  display: inline-flex;
+  width: 100%;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.85rem;
+  padding: 0.72rem 1.15rem;
+  border: 1px solid var(--color-border-strong, #bdcfca);
+  border-radius: 0.72rem;
+  background: var(--color-surface, #fff);
+  color: var(--color-ink, #102925);
+  font: inherit;
+  font-weight: 750;
+  text-decoration: none;
 }
 
 .legalCopy {

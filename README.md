@@ -31,7 +31,7 @@ La web queda en `http://localhost:3000`. Antes de exponer el proyecto, define co
 - Contraseña: `Reludcir#Admin26`
 - Nombre: Operaciones Reludcir
 
-Puedes sobrescribirlos con `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` en `.env`. Inicia sesión en `/mi-cuenta-2` y el panel queda en `/admin`. No uses estas credenciales en producción.
+Puedes sobrescribirlos con `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` en `.env`. Inicia sesión en `/mi-cuenta-2` (correo/contraseña o Continuar con Google si `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` están definidos) y el panel queda en `/admin`. No uses estas credenciales en producción.
 
 ## Verificación
 
