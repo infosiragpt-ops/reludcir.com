@@ -254,32 +254,42 @@ export function BookingWizard() {
           }>;
         };
         if (Array.isArray(payload.districts) && payload.districts.length > 0) {
-          setCatalogDistricts(
-            payload.districts.map((item) => ({
-              id: item.id,
-              slug: item.slug,
-              name: item.name,
-            })),
-          );
+          const nextDistricts = payload.districts.map((item) => ({
+            id: item.id,
+            slug: item.slug,
+            name: item.name,
+          }));
+          setCatalogDistricts(nextDistricts);
+          setDistrict((current) => {
+            if (!current) return current;
+            return (
+              nextDistricts.find(
+                (item) => item.slug === current.slug || item.name === current.name,
+              ) ?? current
+            );
+          });
         }
         if (Array.isArray(payload.agents) && payload.agents.length > 0) {
-          setCatalogStaff(
-            payload.agents.map((agent) => {
-              const fallback =
-                staffMembers.find((member) => member.name === agent.name) ??
-                staffMembers[0]!;
-              return {
-                id: agent.id,
-                name: agent.name,
-                profession: agent.profession || fallback.profession,
-                rating:
-                  agent.rating === null || agent.rating === undefined
-                    ? null
-                    : Number(agent.rating),
-                image: fallback.image,
-              };
-            }),
-          );
+          const nextStaff = payload.agents.map((agent) => {
+            const fallback =
+              staffMembers.find((member) => member.name === agent.name) ??
+              staffMembers[0]!;
+            return {
+              id: agent.id,
+              name: agent.name,
+              profession: agent.profession || fallback.profession,
+              rating:
+                agent.rating === null || agent.rating === undefined
+                  ? null
+                  : Number(agent.rating),
+              image: fallback.image,
+            };
+          });
+          setCatalogStaff(nextStaff);
+          setStaff((current) => {
+            if (!current) return current;
+            return nextStaff.find((item) => item.name === current.name) ?? current;
+          });
         }
       } catch {
         // Keep the published static catalog if the API is temporarily unavailable.
@@ -288,21 +298,6 @@ export function BookingWizard() {
     void loadCatalog();
     return () => controller.abort();
   }, []);
-
-  useEffect(() => {
-    setDistrict((current) => {
-      if (!current) return current;
-      return (
-        catalogDistricts.find(
-          (item) => item.slug === current.slug || item.name === current.name,
-        ) ?? current
-      );
-    });
-    setStaff((current) => {
-      if (!current) return current;
-      return catalogStaff.find((item) => item.name === current.name) ?? current;
-    });
-  }, [catalogDistricts, catalogStaff]);
 
   useEffect(() => {
     if (!district || !date || !time || !duration) return;

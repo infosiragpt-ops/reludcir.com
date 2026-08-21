@@ -101,8 +101,13 @@ export function AdminPaymentsPanel() {
 
   useEffect(() => {
     const controller = new AbortController();
-    void load(controller.signal);
-    return () => controller.abort();
+    const requestId = window.setTimeout(() => {
+      void load(controller.signal);
+    }, 0);
+    return () => {
+      window.clearTimeout(requestId);
+      controller.abort();
+    };
   }, [load]);
 
   async function confirmPayment(event: FormEvent<HTMLFormElement>, payment: PendingPayment) {
