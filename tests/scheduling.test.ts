@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   agentRulesCoverSchedule,
   buildScheduleOccurrences,
+  hoursFromAvailabilityPayload,
   startHoursForDuration,
   type AvailabilityRuleSnapshot,
 } from "../src/lib/scheduling";
@@ -16,6 +17,12 @@ const allWeekRule = (dayOfWeek: number): AvailabilityRuleSnapshot => ({
   endsAt: "19:00:00",
   validFrom: null,
   validUntil: null,
+});
+
+test("reads open hours from the availability payload and ignores invalid values", () => {
+  assert.deepEqual(hoursFromAvailabilityPayload({ hours: [7, 9, 15] }), [7, 9, 15]);
+  assert.deepEqual(hoursFromAvailabilityPayload({ hours: [6, 7, "09", 19, 9.5] }), [7]);
+  assert.deepEqual(hoursFromAvailabilityPayload({}), []);
 });
 
 test("offers on-the-hour starts from 07:00 that still finish by 19:00", () => {

@@ -35,6 +35,7 @@ import {
   type StaffMember,
 } from "@/data/site";
 import { buildRecurrenceOccurrences } from "@/lib/recurrence";
+import { hoursFromAvailabilityPayload } from "@/lib/scheduling";
 
 type CustomerForm = {
   email: string;
@@ -185,6 +186,9 @@ export function BookingWizard() {
   const [availableStaffIds, setAvailableStaffIds] = useState<number[] | null>(null);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [availabilityError, setAvailabilityError] = useState("");
+  const [openHours, setOpenHours] = useState<number[] | null>(null);
+  const [hoursLoading, setHoursLoading] = useState(false);
+  const hoursRequestRef = useRef(0);
   const [catalogDistricts, setCatalogDistricts] = useState(districts);
   const [catalogStaff, setCatalogStaff] = useState(staffMembers);
   const idempotencyKey = useRef("");
@@ -230,11 +234,43 @@ export function BookingWizard() {
     return Array.from({ length: Math.max(1, 13 - serviceHours) }, (_, index) => 7 + index);
   }, [duration]);
   const availableTimesForDate = useMemo(() => {
-    if (!isRecurring || !date) return availableTimes;
-    const dayOfWeek = new Date(`${date}T12:00:00Z`).getUTCDay();
-    const recurringTime = recurringTimes[dayOfWeek];
-    return recurringTime ? [Number(recurringTime.slice(0, 2))] : [];
-  }, [availableTimes, date, isRecurring, recurringTimes]);
+    if (isRecurring && date) {
+      const dayOfWeek = new Date(`${date}T12:00:00Z`).getUTCDay();
+      const recurringTime = recurringTimes[dayOfWeek];
+      return recurringTime ? [Number(recurringTime.slice(0, 2))] : [];
+    }
+    return openHours ?? availableTimes;
+  }, [availableTimes, date, isRecurring, openHours, recurringTimes]);
+
+  async function fetchOpenHours(
+    iso: string,
+    durationHours: number,
+    districtId: number,
+  ) {
+    const requestId = hoursRequestRef.current + 1;
+    hoursRequestRef.current = requestId;
+    setHoursLoading(true);
+    try {
+      const response = await fetch("/api/v1/availability", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          districtId,
+          durationHours,
+          date: iso,
+        }),
+      });
+      if (!response.ok) throw new Error("hours-unavailable");
+      const payload = (await response.json()) as { hours?: unknown };
+      if (hoursRequestRef.current !== requestId) return;
+      setOpenHours(hoursFromAvailabilityPayload(payload));
+    } catch {
+      if (hoursRequestRef.current !== requestId) return;
+      setOpenHours(null);
+    } finally {
+      if (hoursRequestRef.current === requestId) setHoursLoading(false);
+    }
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -495,6 +531,11 @@ export function BookingWizard() {
     setDurationOpen(false);
     setStep(3);
     setError("");
+    if (date && district && service?.kind !== "recurring") {
+      void fetchOpenHours(date, hours, district.id);
+    } else {
+      setOpenHours(null);
+    }
   }
 
   function closeDurationDialog() {
@@ -521,6 +562,7 @@ export function BookingWizard() {
     setBookingResult(null);
     setAvailableStaffIds(null);
     setAvailabilityError("");
+    setOpenHours(null);
     idempotencyKey.current = "";
     setError("");
   }
@@ -673,6 +715,7 @@ export function BookingWizard() {
                       setStaff(null);
                       setAvailableStaffIds(null);
                       setAvailabilityError("");
+                      setOpenHours(null);
                       setError("");
                       setStep(2);
                     }}
@@ -888,7 +931,13 @@ export function BookingWizard() {
                             setAvailableStaffIds(null);
                             setAvailabilityError("");
                             setError("");
-                            if (nextTime) setStep(staffStep);
+                            if (nextTime) {
+                              setStep(staffStep);
+                              return;
+                            }
+                            if (district && duration) {
+                              void fetchOpenHours(iso, duration, district.id);
+                            }
                           }}
                           aria-label={formatDate(iso)}
                         >
@@ -908,6 +957,16 @@ export function BookingWizard() {
                   ) : (
                     <>
                       <strong className="selectedDate">{formatDate(date)}</strong>
+                      {hoursLoading ? (
+                        <p className="availabilityMessage" role="status">
+                          Consultando horas disponibles…
+                        </p>
+                      ) : null}
+                      {!hoursLoading && !isRecurring && openHours?.length === 0 ? (
+                        <p className="availabilityMessage error" role="alert">
+                          No hay horas libres este día. Elige otra fecha.
+                        </p>
+                      ) : null}
                       <div className="timeGrid">
                         {availableTimesForDate.map((hour) => {
                           const value = `${String(hour).padStart(2, "0")}:00`;

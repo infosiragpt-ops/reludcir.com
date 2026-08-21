@@ -60,6 +60,16 @@ export function startHoursForDuration(durationHours: number) {
   );
 }
 
+export function hoursFromAvailabilityPayload(payload: { hours?: unknown }) {
+  if (!Array.isArray(payload.hours)) return [];
+  return payload.hours.filter(
+    (hour): hour is number =>
+      Number.isInteger(hour) &&
+      hour >= SERVICE_DAY_START_HOUR &&
+      hour < SERVICE_DAY_END_HOUR,
+  );
+}
+
 export function limaDateTime(date: string, time: string) {
   return new Date(`${date}T${time}:00-05:00`);
 }
