@@ -5,6 +5,9 @@ export const districtLandingPageSlugs = [
   "miraflores",
   "barranco",
   "surquillo",
+  "jesus-maria",
+  "san-miguel",
+  "magdalena",
 ] as const;
 
 export type DistrictLandingPageSlug = (typeof districtLandingPageSlugs)[number];
@@ -72,6 +75,33 @@ export const districtLandingPages = {
       "Solicita uno o varios servicios de limpieza para casas y departamentos en Surquillo. Reserva por horas de manera sencilla y segura.",
     introduction:
       "Haremos la limpieza de tu casa o departamento cuando la necesites. Solicitar uno o varios servicios de limpieza en Surquillo es muy fácil: revisa lo que incluye cada visita y reserva desde la web.",
+  },
+  "jesus-maria": {
+    name: "Jesús María",
+    heading: "Servicio de limpieza en Jesús María",
+    metadataTitle: "Servicio de limpieza en Jesús María",
+    description:
+      "Reserva limpieza por horas para casas y departamentos en Jesús María. Elige duración, fecha y personal disponible en línea.",
+    introduction:
+      "Nuestros agentes atienden casas y departamentos en Jesús María. Revisa lo que incluye cada visita, elige 4, 6 u 8 horas y confirma el turno desde la web.",
+  },
+  "san-miguel": {
+    name: "San Miguel",
+    heading: "Servicio de limpieza en San Miguel",
+    metadataTitle: "Servicio de limpieza en San Miguel",
+    description:
+      "Contrata un servicio de limpieza a domicilio en San Miguel, con horarios de 07:00 a 19:00 y reserva inmediata.",
+    introduction:
+      "Solicita una visita puntual o recurrente en San Miguel. El proceso es el mismo: distrito, duración, fecha, personal y pago en línea.",
+  },
+  magdalena: {
+    name: "Magdalena del Mar",
+    heading: "Servicio de limpieza en Magdalena del Mar",
+    metadataTitle: "Servicio de limpieza en Magdalena del Mar",
+    description:
+      "Agenda limpieza para casas y departamentos en Magdalena del Mar. Precios publicados y disponibilidad real por agente.",
+    introduction:
+      "Atendemos Magdalena del Mar con el mismo flujo de reserva: eliges el horario, revisas el total y pagas con Yape, transferencia o tarjeta.",
   },
 } satisfies Record<DistrictLandingPageSlug, DistrictLandingPage>;
 

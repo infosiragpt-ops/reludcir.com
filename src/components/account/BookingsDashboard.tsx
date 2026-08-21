@@ -20,7 +20,9 @@ type BookingStatus =
 
 type Booking = {
   id: number;
+  publicId?: string;
   orderId: number | null;
+  orderReference?: string | null;
   status: BookingStatus;
   bookingMode: "one_time" | "recurring";
   recurrenceGroupId?: string | null;
@@ -34,10 +36,13 @@ type Booking = {
   currency: string;
   districtId: number;
   addressSnapshot: unknown;
+  manageable?: boolean;
   assignment?: { agentId: number; status: string } | null;
 };
 
 type BookingsPayload = {
+  user?: { id: number; email: string; role: string } | null;
+  guestAccess?: boolean;
   bookings?: Booking[];
   data?: Booking[];
   error?: string | { code?: string; message?: string };
@@ -120,6 +125,16 @@ function getBookings(payload: BookingsPayload | Booking[] | null) {
   return Array.isArray(payload?.data) ? payload.data : [];
 }
 
+function districtLabel(booking: Booking) {
+  if (booking.addressSnapshot && typeof booking.addressSnapshot === "object") {
+    const name = (booking.addressSnapshot as Record<string, unknown>).district;
+    if (typeof name === "string" && name.trim()) {
+      return name;
+    }
+  }
+  return DISTRICT_NAMES[booking.districtId] ?? `Distrito ${booking.districtId}`;
+}
+
 function formatAddress(snapshot: unknown) {
   if (typeof snapshot === "string") {
     return snapshot;
@@ -168,6 +183,12 @@ function todayInLima() {
 export function BookingsDashboard() {
   const router = useRouter();
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [currentUser, setCurrentUser] = useState<{
+    id: number;
+    email: string;
+    role: string;
+  } | null>(null);
+  const [guestAccess, setGuestAccess] = useState(false);
   const [loadState, setLoadState] = useState<
     "loading" | "ready" | "error" | "unauthenticated"
   >("loading");
@@ -212,6 +233,8 @@ export function BookingsDashboard() {
       }
 
       setBookings(getBookings(payload));
+      setCurrentUser(payload?.user ?? null);
+      setGuestAccess(Boolean(payload?.guestAccess));
       setLoadState("ready");
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
@@ -420,20 +443,35 @@ export function BookingsDashboard() {
       <header className={styles.dashboardHeader}>
         <div>
           <h1 id="bookings-title">Mis reservas</h1>
-          <p>Consulta tus servicios y gestiona cualquier cambio desde aquí.</p>
+          <p>
+            {guestAccess
+              ? "Estas reservas están vinculadas a este navegador. Crea una cuenta con el mismo correo para gestionarlas."
+              : "Consulta tus servicios y gestiona cualquier cambio desde aquí."}
+          </p>
         </div>
         <div className={styles.dashboardHeaderActions}>
+          {currentUser && ["admin", "support"].includes(currentUser.role) ? (
+            <Link className={styles.secondaryButton} href="/admin">
+              Conciliar pagos
+            </Link>
+          ) : null}
           <Link className={styles.primaryLink} href="/#form">
             Nueva reserva
           </Link>
-          <button
-            className={styles.secondaryButton}
-            type="button"
-            onClick={logout}
-            disabled={logoutPending}
-          >
-            {logoutPending ? "Cerrando…" : "Cerrar sesión"}
-          </button>
+          {guestAccess ? (
+            <Link className={styles.secondaryButton} href="/mi-cuenta-2">
+              Crear cuenta
+            </Link>
+          ) : (
+            <button
+              className={styles.secondaryButton}
+              type="button"
+              onClick={logout}
+              disabled={logoutPending}
+            >
+              {logoutPending ? "Cerrando…" : "Cerrar sesión"}
+            </button>
+          )}
         </div>
       </header>
 
@@ -451,8 +489,10 @@ export function BookingsDashboard() {
 
       <div className={styles.bookingList}>
         {sortedBookings.map((booking) => {
-          const canManage = MANAGEABLE_STATUSES.has(booking.status);
-          const canReport = REPORTABLE_STATUSES.has(booking.status);
+          const canManage =
+            booking.manageable !== false && MANAGEABLE_STATUSES.has(booking.status);
+          const canReport =
+            booking.manageable !== false && REPORTABLE_STATUSES.has(booking.status);
           const activeType =
             activeAction?.bookingId === booking.id ? activeAction.type : undefined;
 
@@ -485,7 +525,7 @@ export function BookingsDashboard() {
                 </div>
                 <div>
                   <dt>Distrito</dt>
-                  <dd>{DISTRICT_NAMES[booking.districtId] ?? `Distrito ${booking.districtId}`}</dd>
+                  <dd>{districtLabel(booking)}</dd>
                 </div>
                 <div>
                   <dt>Total</dt>
@@ -572,7 +612,17 @@ export function BookingsDashboard() {
                       </label>
                       <label className={styles.field}>
                         <span>Nueva hora</span>
-                        <input name="time" type="time" min="07:00" max="19:00" required />
+                        <select name="time" required defaultValue="07:00">
+                          {Array.from({ length: 13 }, (_, index) => {
+                            const hour = 7 + index;
+                            const value = `${String(hour).padStart(2, "0")}:00`;
+                            return (
+                              <option value={value} key={value}>
+                                {value}
+                              </option>
+                            );
+                          })}
+                        </select>
                       </label>
                     </div>
                   ) : null}

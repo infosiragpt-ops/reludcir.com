@@ -14,13 +14,21 @@ import { apiError } from "@/lib/api";
 import { expireStaleBookingOrders } from "@/lib/booking-expiration";
 import { buildRecurrenceOccurrences } from "@/lib/recurrence";
 import { consumeRateLimit, getClientIp, rateLimitError } from "@/lib/rate-limit";
-import { agentRulesCoverSchedule, buildScheduleOccurrences } from "@/lib/scheduling";
+import {
+  agentRulesCoverSchedule,
+  buildScheduleOccurrences,
+  isWithinBookingWindow,
+  limaDateTime,
+  startHoursForDuration,
+} from "@/lib/scheduling";
+
+const hourValue = (hour: number) => `${String(hour).padStart(2, "0")}:00`;
 
 const availabilitySchema = z.object({
-  districtId: z.number().int().min(1).max(9),
+  districtId: z.number().int().positive(),
   durationHours: z.union([z.literal(4), z.literal(6), z.literal(8)]),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  time: z.string().regex(/^(0[7-9]|1\d):00$/),
+  time: z.string().regex(/^(0[7-9]|1\d):00$/).optional(),
   recurrence: z
     .object({
       times: z
@@ -38,13 +46,13 @@ const availabilitySchema = z.object({
     .optional(),
 });
 
-function buildStarts(data: z.infer<typeof availabilitySchema>) {
+function buildStarts(data: z.infer<typeof availabilitySchema>, time: string) {
   if (!data.recurrence) {
-    return [new Date(`${data.date}T${data.time}:00-05:00`)];
+    return [limaDateTime(data.date, time)];
   }
 
-  return buildRecurrenceOccurrences(data.recurrence, 60).map(
-    (occurrence) => new Date(`${occurrence.date}T${occurrence.time}:00-05:00`),
+  return buildRecurrenceOccurrences(data.recurrence, 60).map((occurrence) =>
+    limaDateTime(occurrence.date, occurrence.time),
   );
 }
 
@@ -63,23 +71,9 @@ export async function POST(request: Request) {
     );
     if (!limit.allowed) return rateLimitError(limit);
 
-    const starts = buildStarts(parsed.data);
-    if (
-      starts.length === 0 ||
-      starts.length > 60 ||
-      starts.some(
-        (start) =>
-          Number.isNaN(start.getTime()) ||
-          start.getTime() < Date.now() + 10 * 60 * 60 * 1_000,
-      )
-    ) {
-      return apiError("El horario no está disponible.", 422, "INVALID_SCHEDULE");
-    }
-    const occurrences = buildScheduleOccurrences(
-      starts,
-      parsed.data.durationHours,
-    );
-    const ends = occurrences.map((occurrence) => occurrence.end);
+    const timesToCheck = parsed.data.time
+      ? [parsed.data.time]
+      : startHoursForDuration(parsed.data.durationHours).map(hourValue);
 
     await expireStaleBookingOrders();
 
@@ -101,20 +95,34 @@ export async function POST(request: Request) {
     ]);
 
     if (!district || activeAgents.length === 0) {
-      return NextResponse.json({ agentIds: [] });
+      return NextResponse.json({
+        hours: [],
+        agentIds: [],
+        visits: 0,
+      });
     }
 
     const activeAgentIds = activeAgents.map((agent) => agent.id);
+    const windowStarts = timesToCheck.flatMap((time) => buildStarts(parsed.data, time));
+    const validWindowStarts = windowStarts.filter((start) => isWithinBookingWindow(start));
+    if (validWindowStarts.length === 0) {
+      return NextResponse.json({ hours: [], agentIds: [], visits: 0 });
+    }
 
-    const overlapConditions = starts.map((start, index) =>
+    const windowOccurrences = buildScheduleOccurrences(
+      validWindowStarts,
+      parsed.data.durationHours,
+    );
+    const windowEnds = windowOccurrences.map((occurrence) => occurrence.end);
+    const overlapConditions = validWindowStarts.map((start, index) =>
       and(
-        lt(bookingAssignments.startsAt, ends[index]!),
+        lt(bookingAssignments.startsAt, windowEnds[index]!),
         gt(bookingAssignments.endsAt, start),
       ),
     );
-    const exceptionConditions = starts.map((start, index) =>
+    const exceptionConditions = validWindowStarts.map((start, index) =>
       and(
-        lt(scheduleExceptions.startsAt, ends[index]!),
+        lt(scheduleExceptions.startsAt, windowEnds[index]!),
         gt(scheduleExceptions.endsAt, start),
       ),
     );
@@ -142,7 +150,11 @@ export async function POST(request: Request) {
           ),
         ),
       getDb()
-        .select({ agentId: bookingAssignments.agentId })
+        .select({
+          agentId: bookingAssignments.agentId,
+          startsAt: bookingAssignments.startsAt,
+          endsAt: bookingAssignments.endsAt,
+        })
         .from(bookingAssignments)
         .where(
           and(
@@ -152,7 +164,11 @@ export async function POST(request: Request) {
           ),
         ),
       getDb()
-        .select({ agentId: scheduleExceptions.agentId })
+        .select({
+          agentId: scheduleExceptions.agentId,
+          startsAt: scheduleExceptions.startsAt,
+          endsAt: scheduleExceptions.endsAt,
+        })
         .from(scheduleExceptions)
         .where(
           and(
@@ -163,24 +179,51 @@ export async function POST(request: Request) {
         ),
     ]);
 
-    const unavailable = new Set([
-      ...busyAssignments.map((row) => row.agentId),
-      ...unavailableExceptions.map((row) => row.agentId),
-    ]);
-
-    return NextResponse.json({
-      agentIds: activeAgents
-        .map((agent) => agent.id)
-        .filter(
-          (agentId) =>
-            !unavailable.has(agentId) &&
-            agentRulesCoverSchedule(
-              rules,
-              agentId,
-              district.id,
-              occurrences,
+    const agentIdsForStarts = (starts: Date[]) => {
+      if (
+        starts.length === 0 ||
+        starts.length > 60 ||
+        starts.some((start) => !isWithinBookingWindow(start))
+      ) {
+        return [];
+      }
+      const occurrences = buildScheduleOccurrences(starts, parsed.data.durationHours);
+      return activeAgentIds.filter((agentId) => {
+        const busy = busyAssignments.some(
+          (row) =>
+            row.agentId === agentId &&
+            occurrences.some(
+              (occurrence) => row.startsAt < occurrence.end && row.endsAt > occurrence.start,
             ),
-        ),
+        );
+        const blocked = unavailableExceptions.some(
+          (row) =>
+            row.agentId === agentId &&
+            occurrences.some(
+              (occurrence) => row.startsAt < occurrence.end && row.endsAt > occurrence.start,
+            ),
+        );
+        return (
+          !busy &&
+          !blocked &&
+          agentRulesCoverSchedule(rules, agentId, district.id, occurrences)
+        );
+      });
+    };
+
+    if (!parsed.data.time) {
+      const hours = startHoursForDuration(parsed.data.durationHours).filter((hour) => {
+        const starts = buildStarts(parsed.data, hourValue(hour));
+        return agentIdsForStarts(starts).length > 0;
+      });
+      return NextResponse.json({ hours, agentIds: [], visits: 0 });
+    }
+
+    const starts = buildStarts(parsed.data, parsed.data.time);
+    const agentIds = agentIdsForStarts(starts);
+    return NextResponse.json({
+      hours: agentIds.length > 0 ? [Number(parsed.data.time.slice(0, 2))] : [],
+      agentIds,
       visits: starts.length,
     });
   } catch (error) {

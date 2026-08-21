@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { apiError } from "@/lib/api";
+import { authorizeCron } from "@/lib/cron";
 import {
   processNextPaymentOperation,
   recoverStalePaymentOperations,
@@ -9,13 +10,8 @@ import {
 const BATCH_SIZE = 10;
 
 export async function POST(request: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    return apiError("Tarea programada no configurada.", 503, "NOT_CONFIGURED");
-  }
-  if (request.headers.get("authorization") !== `Bearer ${secret}`) {
-    return apiError("No autorizado.", 401, "UNAUTHORIZED");
-  }
+  const unauthorized = authorizeCron(request);
+  if (unauthorized) return unauthorized;
 
   try {
     const recovery = await recoverStalePaymentOperations();

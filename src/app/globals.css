@@ -16,7 +16,7 @@
 
 @font-face {
   font-family: "Open Sans";
-  src: url("/fonts/open-sans-400.ttf") format("truetype");
+  src: url("/fonts/open-sans-400.ttf") format("woff2");
   font-style: normal;
   font-weight: 400;
   font-display: swap;
@@ -24,7 +24,7 @@
 
 @font-face {
   font-family: "Poppins";
-  src: url("/fonts/poppins-400.ttf") format("truetype");
+  src: url("/fonts/poppins-400.ttf") format("woff2");
   font-style: normal;
   font-weight: 400;
   font-display: swap;
@@ -32,7 +32,7 @@
 
 @font-face {
   font-family: "Poppins";
-  src: url("/fonts/poppins-500.ttf") format("truetype");
+  src: url("/fonts/poppins-500.ttf") format("woff2");
   font-style: normal;
   font-weight: 500;
   font-display: swap;
@@ -40,7 +40,7 @@
 
 @font-face {
   font-family: "Poppins";
-  src: url("/fonts/poppins-600.ttf") format("truetype");
+  src: url("/fonts/poppins-600.ttf") format("woff2");
   font-style: normal;
   font-weight: 600;
   font-display: swap;
@@ -673,15 +673,43 @@ h4 {
 }
 
 .selectionCard {
-  min-height: 116px;
-  padding: 17px 12px 13px;
+  min-height: 168px;
+  padding: 16px 10px 22px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
+  overflow: hidden;
   color: #33373d;
   font-size: 13px;
+  font-weight: 600;
+}
+
+.selectionCard::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 10px;
+  background: repeating-linear-gradient(
+    -45deg,
+    #e4e8ee,
+    #e4e8ee 3px,
+    transparent 3px,
+    transparent 6px
+  );
+  content: "";
+}
+
+.locationLogo {
+  width: 96px;
+  height: 72px;
+  object-fit: contain;
+}
+
+.locationName {
+  text-align: center;
 }
 
 .locationIcon {

@@ -5,13 +5,14 @@ import { getDb } from "@/db";
 import { paymentOperations } from "@/db/schema";
 import { apiError } from "@/lib/api";
 import { getAuthenticatedUser } from "@/lib/auth";
+import { isPrivilegedStaff } from "@/lib/staff";
 
 export async function POST(
   _request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
   const user = await getAuthenticatedUser();
-  if (!user || !["admin", "support"].includes(user.role)) {
+  if (!user || !isPrivilegedStaff(user.role)) {
     return apiError("No autorizado.", 403, "FORBIDDEN");
   }
 

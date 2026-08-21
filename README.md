@@ -25,6 +25,14 @@ pnpm dev
 
 La web queda en `http://localhost:3000`. Antes de exponer el proyecto, define como mínimo `AUTH_SECRET`, `RATE_LIMIT_SECRET`, las conexiones PostgreSQL y `CRON_SECRET`; usa valores aleatorios diferentes por entorno.
 
+`pnpm db:seed` crea siempre un administrador interno (scrypt):
+
+- Correo: `nina.v@example.com`
+- Contraseña: `Reludcir#Admin26`
+- Nombre: Operaciones Reludcir
+
+Puedes sobrescribirlos con `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` en `.env`. Inicia sesión en `/mi-cuenta-2` (correo/contraseña o Continuar con Google si `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` están definidos) y el panel queda en `/admin`. No uses estas credenciales en producción.
+
 ## Verificación
 
 ```bash
@@ -44,7 +52,8 @@ pnpm build
 - Yape/transferencia con vencimiento del cupo y conciliación por personal autorizado.
 - Registro, inicio/cierre de sesión, recuperación de contraseña, panel de reservas, reprogramación, cancelación e incidencias.
 - Claim seguro de pedidos de invitado mediante cookie firmada; no se apropian reservas solo por coincidir un correo.
-- Newsletter, SEO técnico, sitemap, manifest, páginas distritales y diseño adaptable.
+- Newsletter, SEO técnico, sitemap, manifest, páginas distritales (nueve distritos) y diseño adaptable.
+- Panel interno `/admin`: reservas, personal, clientes, pagos, catálogo, calendario y usuarios admin/support. El rol `support` solo ve conciliación de pagos.
 
 ## Producción
 
@@ -53,9 +62,10 @@ pnpm build
 3. Configura el webhook de Stripe hacia `/api/v1/payments/stripe/webhook` para `checkout.session.completed`, `refund.created`, `refund.updated` y `refund.failed`, y guarda su secreto.
 4. Configura correo, WhatsApp y los datos de Yape/banco de `.env.example`.
 5. Mantén activas las tareas de `vercel.json` o invoca sus rutas desde un scheduler equivalente con `Authorization: Bearer $CRON_SECRET`.
-6. Crea cuentas internas con rol `admin` o `support` para conciliar pagos manuales.
+6. Crea cuentas internas con rol `admin` o `support` para usar `/admin`. No uses `SEED_ADMIN_*` en producción.
+7. Configura el webhook de Stripe, `EMAIL_*` y, si aplica, plantillas de WhatsApp. Sin esas claves el dominio de reservas y la conciliación manual siguen operativos; correo/WhatsApp y tarjeta quedan pendientes de forma explícita (503 o outbox `not_configured`), no como no-ops silenciosos.
 
-La guía del esquema está en [docs/database.md](docs/database.md) y el runbook operativo en [docs/operations.md](docs/operations.md).
+La guía del esquema está en [docs/database.md](docs/database.md) y el runbook operativo en [docs/operations.md](docs/operations.md). Lo que aún depende de proveedores externos está listado allí.
 
 ## Notas de seguridad
 

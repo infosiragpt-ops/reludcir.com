@@ -32,17 +32,21 @@ function sign(encodedPayload: string) {
     .digest("base64url");
 }
 
-function createClaimToken(bookingPublicId: string, orderReference: string) {
+export function createClaimToken(
+  bookingPublicId: string,
+  orderReference: string,
+  nowSeconds = Math.floor(Date.now() / 1_000),
+) {
   const payload: ClaimPayload = {
     bookingPublicId,
     orderReference,
-    expiresAt: Math.floor(Date.now() / 1_000) + CLAIM_TTL_SECONDS,
+    expiresAt: nowSeconds + CLAIM_TTL_SECONDS,
   };
   const encoded = Buffer.from(JSON.stringify(payload)).toString("base64url");
   return `${encoded}.${sign(encoded)}`;
 }
 
-function verifyClaimToken(token: string): ClaimPayload | null {
+export function verifyClaimToken(token: string): ClaimPayload | null {
   const [encoded, receivedSignature] = token.split(".");
   if (!encoded || !receivedSignature) return null;
   const expectedSignature = sign(encoded);
@@ -94,13 +98,16 @@ export async function attachGuestBookingClaim(
   });
 }
 
-export async function claimGuestBookings(userId: number, email: string) {
-  const claimTokens = ((await cookies()).get(CLAIM_COOKIE)?.value ?? "")
+export async function getVerifiedBookingClaims(): Promise<ClaimPayload[]> {
+  return ((await cookies()).get(CLAIM_COOKIE)?.value ?? "")
     .split("~")
-    .slice(-MAX_CLAIMS);
-  const claims = claimTokens
+    .slice(-MAX_CLAIMS)
     .map(verifyClaimToken)
     .filter((claim): claim is ClaimPayload => claim !== null);
+}
+
+export async function claimGuestBookings(userId: number, email: string) {
+  const claims = await getVerifiedBookingClaims();
   if (claims.length === 0) return 0;
 
   return getDb().transaction(async (transaction) => {

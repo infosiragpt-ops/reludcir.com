@@ -14,6 +14,7 @@ import {
 } from "@/db/schema";
 import { apiError, postgresErrorCode } from "@/lib/api";
 import { getAuthenticatedUser } from "@/lib/auth";
+import { isPrivilegedStaff } from "@/lib/staff";
 
 const confirmationSchema = z.object({
   externalReference: z.string().trim().min(3).max(160),
@@ -28,7 +29,7 @@ export async function POST(
   context: { params: Promise<{ id: string }> },
 ) {
   const user = await getAuthenticatedUser();
-  if (!user || !["admin", "support"].includes(user.role)) {
+  if (!user || !isPrivilegedStaff(user.role)) {
     return apiError("No autorizado.", 403, "FORBIDDEN");
   }
 

@@ -1,14 +1,9 @@
 import { sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { z } from "zod";
-
 import { getDb } from "@/db";
 import { apiError, normalizeEmail } from "@/lib/api";
+import { newsletterSchema } from "@/lib/newsletter";
 import { consumeRateLimit, getClientIp, rateLimitError } from "@/lib/rate-limit";
-
-const newsletterSchema = z.object({
-  email: z.string().trim().email().max(254),
-});
 
 export async function POST(request: Request) {
   const contentType = request.headers.get("content-type") ?? "";

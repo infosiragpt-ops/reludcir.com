@@ -23,11 +23,12 @@ export function SiteHeader() {
       <div className="headerInner">
         <Link href="/" className="brand" aria-label="Reludcir, inicio">
           <Image
-            src="/assets/logo-reludcir.webp"
+            src="/assets/logo-reludcir.svg"
             alt="Reludcir"
             width={165}
             height={41}
             priority
+            unoptimized
           />
         </Link>
 

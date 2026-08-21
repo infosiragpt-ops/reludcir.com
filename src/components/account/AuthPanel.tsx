@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, KeyboardEvent, useState } from "react";
 
+import { googleLoginErrorMessage } from "@/lib/google-oauth";
+
 import styles from "./account.module.css";
 
 type AuthMode = "login" | "register";
@@ -12,6 +14,7 @@ type ApiPayload = {
   error?: string | { code?: string; field?: string; message?: string };
   message?: string;
   session?: { expiresAt?: string };
+  user?: { id?: number; email?: string; role?: string };
 };
 
 function getErrorMessage(payload: ApiPayload | null, fallback: string) {
@@ -40,13 +43,14 @@ async function readPayload(response: Response): Promise<ApiPayload | null> {
   return (await response.json()) as ApiPayload;
 }
 
-export function AuthPanel() {
+export function AuthPanel({ initialError }: { initialError?: string }) {
   const router = useRouter();
   const [mode, setMode] = useState<AuthMode>("login");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const initialGoogleError = googleLoginErrorMessage(initialError);
   const [feedback, setFeedback] = useState<
     { kind: "error" | "success"; message: string } | undefined
-  >();
+  >(initialGoogleError ? { kind: "error", message: initialGoogleError } : undefined);
 
   function selectMode(nextMode: AuthMode) {
     setMode(nextMode);
@@ -124,14 +128,17 @@ export function AuthPanel() {
         );
       }
 
+      const privileged = payload?.user?.role === "admin" || payload?.user?.role === "support";
       setFeedback({
         kind: "success",
         message:
-          mode === "login"
-            ? "Sesión iniciada. Abriendo tus reservas…"
-            : "Tu cuenta fue creada. Abriendo tus reservas…",
+          privileged
+            ? "Sesión iniciada. Abriendo el panel de operaciones…"
+            : mode === "login"
+              ? "Sesión iniciada. Abriendo tus reservas…"
+              : "Tu cuenta fue creada. Abriendo tus reservas…",
       });
-      router.replace("/mis-reservas");
+      router.replace(privileged ? "/admin" : "/mis-reservas");
       router.refresh();
     } catch (error) {
       setFeedback({
@@ -299,6 +306,15 @@ export function AuthPanel() {
                 : mode === "login"
                   ? "Acceder a mis reservas"
                   : "Crear cuenta"}
+            </button>
+          </form>
+
+          <p className={styles.authDivider} role="separator">
+            o
+          </p>
+          <form action="/api/v1/auth/google/start" method="get">
+            <button className={styles.oauthButton} type="submit">
+              Continuar con Google
             </button>
           </form>
 
