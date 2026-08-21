@@ -17,7 +17,7 @@ import { consumeRateLimit, getClientIp, rateLimitError } from "@/lib/rate-limit"
 import { agentRulesCoverSchedule, buildScheduleOccurrences } from "@/lib/scheduling";
 
 const availabilitySchema = z.object({
-  districtId: z.number().int().min(1).max(9),
+  districtId: z.number().int().positive(),
   durationHours: z.union([z.literal(4), z.literal(6), z.literal(8)]),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   time: z.string().regex(/^(0[7-9]|1\d):00$/),

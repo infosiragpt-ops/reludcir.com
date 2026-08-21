@@ -10,15 +10,11 @@ import {
 } from "@/db/schema";
 import { apiError } from "@/lib/api";
 import { expireStaleBookingOrders } from "@/lib/booking-expiration";
+import { authorizeCron } from "@/lib/cron";
 
 export async function POST(request: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    return apiError("Tarea programada no configurada.", 503, "NOT_CONFIGURED");
-  }
-  if (request.headers.get("authorization") !== `Bearer ${secret}`) {
-    return apiError("No autorizado.", 401, "UNAUTHORIZED");
-  }
+  const unauthorized = authorizeCron(request);
+  if (unauthorized) return unauthorized;
 
   try {
     const now = new Date();

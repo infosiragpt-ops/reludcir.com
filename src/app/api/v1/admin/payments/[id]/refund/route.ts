@@ -6,6 +6,7 @@ import { getDb } from "@/db";
 import { paymentOperations, payments } from "@/db/schema";
 import { apiError, postgresErrorCode } from "@/lib/api";
 import { getAuthenticatedUser } from "@/lib/auth";
+import { isPrivilegedStaff } from "@/lib/staff";
 import { decimalToMinorUnits, minorUnitsToDecimal } from "@/lib/pricing";
 
 const refundSchema = z.object({
@@ -19,7 +20,7 @@ export async function POST(
   context: { params: Promise<{ id: string }> },
 ) {
   const user = await getAuthenticatedUser();
-  if (!user || !["admin", "support"].includes(user.role)) {
+  if (!user || !isPrivilegedStaff(user.role)) {
     return apiError("No autorizado.", 403, "FORBIDDEN");
   }
 

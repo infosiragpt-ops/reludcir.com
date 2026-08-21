@@ -4,18 +4,14 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { notificationOutbox } from "@/db/schema";
 import { apiError } from "@/lib/api";
+import { authorizeCron } from "@/lib/cron";
 import { deliverNotification } from "@/lib/notifications";
 
 const BATCH_SIZE = 20;
 
 export async function POST(request: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    return apiError("Tarea programada no configurada.", 503, "NOT_CONFIGURED");
-  }
-  if (request.headers.get("authorization") !== `Bearer ${secret}`) {
-    return apiError("No autorizado.", 401, "UNAUTHORIZED");
-  }
+  const unauthorized = authorizeCron(request);
+  if (unauthorized) return unauthorized;
 
   try {
     const now = new Date();
@@ -95,7 +91,8 @@ export async function POST(request: Request) {
           .where(eq(notificationOutbox.id, job.id));
         sent += 1;
       } else {
-        const exhausted = job.attempts >= job.maxAttempts;
+        const exhausted =
+          delivery.reason === "not_configured" || job.attempts >= job.maxAttempts;
         await getDb()
           .update(notificationOutbox)
           .set({

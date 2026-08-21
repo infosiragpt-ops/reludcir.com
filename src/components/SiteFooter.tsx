@@ -8,10 +8,11 @@ export function SiteFooter() {
       <div className="footerGrid contentWidth">
         <div className="footerBrand">
           <Image
-            src="/assets/logo-reludcir.webp"
+            src="/assets/logo-reludcir.svg"
             alt="Reludcir"
             width={165}
             height={41}
+            unoptimized
           />
           <p>
             Proveemos servicios de limpieza usando tecnología con la finalidad de

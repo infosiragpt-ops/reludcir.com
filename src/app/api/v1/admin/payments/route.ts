@@ -5,10 +5,11 @@ import { getDb } from "@/db";
 import { bookingOrders, paymentOperations, payments } from "@/db/schema";
 import { apiError } from "@/lib/api";
 import { getAuthenticatedUser } from "@/lib/auth";
+import { isPrivilegedStaff } from "@/lib/staff";
 
 export async function GET() {
   const user = await getAuthenticatedUser();
-  if (!user || !["admin", "support"].includes(user.role)) {
+  if (!user || !isPrivilegedStaff(user.role)) {
     return apiError("No autorizado.", 403, "FORBIDDEN");
   }
 
@@ -87,7 +88,17 @@ export async function GET() {
       .orderBy(asc(paymentOperations.createdAt))
       .limit(100);
 
-    return NextResponse.json({ payments: pendingPayments, refundReviews });
+    return NextResponse.json({
+      payments: pendingPayments.map((payment) => ({
+        ...payment,
+        createdAt: payment.createdAt.toISOString(),
+        expiresAt: payment.expiresAt?.toISOString() ?? null,
+      })),
+      refundReviews: refundReviews.map((review) => ({
+        ...review,
+        requestedAt: review.requestedAt.toISOString(),
+      })),
+    });
   } catch (error) {
     console.error("Manual payments list failed", error);
     return apiError("No pudimos cargar los pagos.", 500, "INTERNAL_ERROR");

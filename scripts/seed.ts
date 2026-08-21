@@ -1,13 +1,17 @@
-import { inArray, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 
 import { closeDb, withTransaction } from "../src/db";
 import {
   agents,
   availabilityRules,
+  customerProfiles,
   districts,
   servicePackages,
   services,
+  users,
 } from "../src/db/schema";
+import { hashPassword } from "../src/lib/auth";
+import { normalizeEmail } from "../src/lib/api";
 import { minorUnitsToDecimal, PACKAGE_PRICES } from "../src/lib/pricing";
 
 const districtSeed = [
@@ -201,6 +205,51 @@ async function seed(): Promise<void> {
         })),
       ),
     );
+
+    const adminEmail = process.env.SEED_ADMIN_EMAIL?.trim();
+    const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+    if (adminEmail && adminPassword && adminPassword.length >= 8) {
+      const email = normalizeEmail(adminEmail);
+      const passwordHash = await hashPassword(adminPassword);
+      const [existingAdmin] = await transaction
+        .select({ id: users.id })
+        .from(users)
+        .where(sql`lower(${users.email}) = ${email}`)
+        .limit(1);
+      const admin = existingAdmin
+        ? (
+            await transaction
+              .update(users)
+              .set({
+                passwordHash,
+                role: "admin",
+                isActive: true,
+                updatedAt: new Date(),
+              })
+              .where(eq(users.id, existingAdmin.id))
+              .returning({ id: users.id })
+          )[0]
+        : (
+            await transaction
+              .insert(users)
+              .values({
+                email,
+                passwordHash,
+                role: "admin",
+              })
+              .returning({ id: users.id })
+          )[0];
+      if (admin) {
+        await transaction
+          .insert(customerProfiles)
+          .values({
+            userId: admin.id,
+            firstName: "Operaciones",
+            lastName: "Reludcir",
+          })
+          .onConflictDoNothing();
+      }
+    }
 
     if (availabilitySeed.length > 0) {
       await transaction

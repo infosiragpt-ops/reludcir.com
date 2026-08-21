@@ -183,6 +183,8 @@ export function BookingWizard() {
   const [availableStaffIds, setAvailableStaffIds] = useState<number[] | null>(null);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [availabilityError, setAvailabilityError] = useState("");
+  const [catalogDistricts, setCatalogDistricts] = useState(districts);
+  const [catalogStaff, setCatalogStaff] = useState(staffMembers);
   const idempotencyKey = useRef("");
   const durationDialogRef = useRef<HTMLDivElement>(null);
   const durationTriggerRef = useRef<HTMLElement | null>(null);
@@ -231,6 +233,76 @@ export function BookingWizard() {
     const recurringTime = recurringTimes[dayOfWeek];
     return recurringTime ? [Number(recurringTime.slice(0, 2))] : [];
   }, [availableTimes, date, isRecurring, recurringTimes]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    async function loadCatalog() {
+      try {
+        const response = await fetch("/api/v1/catalog", {
+          headers: { Accept: "application/json" },
+          signal: controller.signal,
+        });
+        if (!response.ok) return;
+        const payload = (await response.json()) as {
+          districts?: Array<{ id: number; slug: string; name: string }>;
+          agents?: Array<{
+            id: number;
+            slug: string;
+            name: string;
+            profession: string;
+            rating: string | number | null;
+          }>;
+        };
+        if (Array.isArray(payload.districts) && payload.districts.length > 0) {
+          setCatalogDistricts(
+            payload.districts.map((item) => ({
+              id: item.id,
+              slug: item.slug,
+              name: item.name,
+            })),
+          );
+        }
+        if (Array.isArray(payload.agents) && payload.agents.length > 0) {
+          setCatalogStaff(
+            payload.agents.map((agent) => {
+              const fallback =
+                staffMembers.find((member) => member.name === agent.name) ??
+                staffMembers[0]!;
+              return {
+                id: agent.id,
+                name: agent.name,
+                profession: agent.profession || fallback.profession,
+                rating:
+                  agent.rating === null || agent.rating === undefined
+                    ? null
+                    : Number(agent.rating),
+                image: fallback.image,
+              };
+            }),
+          );
+        }
+      } catch {
+        // Keep the published static catalog if the API is temporarily unavailable.
+      }
+    }
+    void loadCatalog();
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    setDistrict((current) => {
+      if (!current) return current;
+      return (
+        catalogDistricts.find(
+          (item) => item.slug === current.slug || item.name === current.name,
+        ) ?? current
+      );
+    });
+    setStaff((current) => {
+      if (!current) return current;
+      return catalogStaff.find((item) => item.name === current.name) ?? current;
+    });
+  }, [catalogDistricts, catalogStaff]);
 
   useEffect(() => {
     if (!district || !date || !time || !duration) return;
@@ -591,7 +663,7 @@ export function BookingWizard() {
             <section className="bookingStep" aria-labelledby="location-title">
               <h2 id="location-title">Selecciona ubicación</h2>
               <div className="locationGrid">
-                {districts.map((item) => (
+                {catalogDistricts.map((item) => (
                   <button
                     className={district?.id === item.id ? "selectionCard selected" : "selectionCard"}
                     type="button"
@@ -871,7 +943,7 @@ export function BookingWizard() {
                 </p>
               ) : null}
               <div className="staffGrid">
-                {staffMembers
+                {catalogStaff
                   .filter(
                     (member) =>
                       availableStaffIds?.includes(member.id) ?? false,

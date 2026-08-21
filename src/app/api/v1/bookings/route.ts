@@ -48,12 +48,12 @@ type BookingResponseBody = {
 };
 
 const bookingSchema = z.object({
-  districtId: z.number().int().min(1).max(9),
+  districtId: z.number().int().positive(),
   serviceId: z.union([z.literal(5), z.literal(7)]),
   durationHours: z.union([z.literal(4), z.literal(6), z.literal(8)]),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   time: z.string().regex(/^(0[7-9]|1\d):00$/),
-  staffId: z.number().int().min(1).max(3),
+  staffId: z.number().int().positive(),
   timezone: z.literal("America/Lima").optional().default("America/Lima"),
   paymentMethod: z.enum(["card", "yape", "transfer"]),
   recurrence: z

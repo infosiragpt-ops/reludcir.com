@@ -31,7 +31,7 @@ export const districts: District[] = [
   { id: 6, name: "Jesús María", slug: "jesus-maria" },
   { id: 7, name: "San Miguel", slug: "san-miguel" },
   { id: 8, name: "Barranco", slug: "barranco" },
-  { id: 9, name: "Magdalena", slug: "magdalena" },
+  { id: 9, name: "Magdalena del Mar", slug: "magdalena-del-mar" },
 ];
 
 export const servicePlans: ServicePlan[] = [
