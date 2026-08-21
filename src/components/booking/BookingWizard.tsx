@@ -24,6 +24,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
+  districtCardImage,
+  districtCardLabel,
   districts,
   packages,
   servicePlans,
@@ -258,6 +260,8 @@ export function BookingWizard() {
             id: item.id,
             slug: item.slug,
             name: item.name,
+            label: districtCardLabel(item.slug, item.name),
+            image: districtCardImage(item.slug),
           }));
           setCatalogDistricts(nextDistricts);
           setDistrict((current) => {
@@ -670,12 +674,18 @@ export function BookingWizard() {
                       setAvailableStaffIds(null);
                       setAvailabilityError("");
                       setError("");
+                      setStep(2);
                     }}
                   >
-                    <span className="locationIcon">
-                      <MapPin aria-hidden="true" />
-                    </span>
-                    <span>{item.name}</span>
+                    <Image
+                      className="locationLogo"
+                      src={item.image}
+                      alt=""
+                      width={120}
+                      height={80}
+                      unoptimized
+                    />
+                    <span className="locationName">{item.label}</span>
                     {district?.id === item.id && <Check className="cardCheck" aria-hidden="true" />}
                   </button>
                 ))}
@@ -700,6 +710,8 @@ export function BookingWizard() {
                       setAvailableStaffIds(null);
                       setAvailabilityError("");
                       setError("");
+                      durationTriggerRef.current = document.activeElement as HTMLElement | null;
+                      setDurationOpen(true);
                     }}
                   >
                     <Image src={item.image} alt="" width={104} height={104} />
@@ -869,12 +881,14 @@ export function BookingWizard() {
                           disabled={disabled}
                           className={date === iso ? "selected" : ""}
                           onClick={() => {
+                            const nextTime = isRecurring ? (recurringTimes[dayOfWeek] ?? "") : "";
                             setDate(iso);
-                            setTime(isRecurring ? (recurringTimes[dayOfWeek] ?? "") : "");
+                            setTime(nextTime);
                             setStaff(null);
                             setAvailableStaffIds(null);
                             setAvailabilityError("");
                             setError("");
+                            if (nextTime) setStep(staffStep);
                           }}
                           aria-label={formatDate(iso)}
                         >
@@ -909,6 +923,7 @@ export function BookingWizard() {
                                 setAvailableStaffIds(null);
                                 setAvailabilityError("");
                                 setError("");
+                                if (date) setStep(staffStep);
                               }}
                             >
                               <span>{formatHour(hour)}</span>
@@ -952,6 +967,7 @@ export function BookingWizard() {
                     onClick={() => {
                       setStaff(member);
                       setError("");
+                      setStep(informationStep);
                     }}
                   >
                     <Image src={member.image} alt="" width={86} height={86} />

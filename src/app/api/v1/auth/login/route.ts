@@ -51,6 +51,7 @@ export async function POST(request: Request) {
       .select({
         id: users.id,
         email: users.email,
+        role: users.role,
         passwordHash: users.passwordHash,
         isActive: users.isActive,
       })
@@ -74,7 +75,7 @@ export async function POST(request: Request) {
     }
     const session = await createSession(user.id, parsed.data.remember);
     return NextResponse.json({
-      user: { id: user.id, email: user.email },
+      user: { id: user.id, email: user.email, role: user.role },
       session: { expiresAt: session.expiresAt.toISOString() },
       claimedBookings,
     });

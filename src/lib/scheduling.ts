@@ -47,6 +47,30 @@ function timeToMinute(value: string) {
   return Number(hour) * 60 + Number(minute);
 }
 
+export const BOOKING_LEAD_TIME_MS = 10 * 60 * 60 * 1_000;
+export const SERVICE_DAY_START_HOUR = 7;
+export const SERVICE_DAY_END_HOUR = 19;
+
+export function startHoursForDuration(durationHours: number) {
+  const lastStart = SERVICE_DAY_END_HOUR - durationHours;
+  if (lastStart < SERVICE_DAY_START_HOUR) return [];
+  return Array.from(
+    { length: lastStart - SERVICE_DAY_START_HOUR + 1 },
+    (_, index) => SERVICE_DAY_START_HOUR + index,
+  );
+}
+
+export function limaDateTime(date: string, time: string) {
+  return new Date(`${date}T${time}:00-05:00`);
+}
+
+export function isWithinBookingWindow(start: Date, now = new Date()) {
+  return (
+    start.getTime() >= now.getTime() + BOOKING_LEAD_TIME_MS &&
+    start.getTime() <= now.getTime() + 180 * 24 * 60 * 60 * 1_000
+  );
+}
+
 export function buildScheduleOccurrences(
   starts: Date[],
   durationHours: number,

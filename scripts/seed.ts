@@ -26,6 +26,9 @@ const districtSeed = [
   { slug: "magdalena-del-mar", name: "Magdalena del Mar" },
 ] as const;
 
+const DEFAULT_ADMIN_EMAIL = "nina.v@example.com";
+const DEFAULT_ADMIN_PASSWORD = "Reludcir#Admin26";
+
 const agentSeed = [
   {
     slug: "juan",
@@ -206,49 +209,59 @@ async function seed(): Promise<void> {
       ),
     );
 
-    const adminEmail = process.env.SEED_ADMIN_EMAIL?.trim();
-    const adminPassword = process.env.SEED_ADMIN_PASSWORD;
-    if (adminEmail && adminPassword && adminPassword.length >= 8) {
-      const email = normalizeEmail(adminEmail);
-      const passwordHash = await hashPassword(adminPassword);
-      const [existingAdmin] = await transaction
-        .select({ id: users.id })
-        .from(users)
-        .where(sql`lower(${users.email}) = ${email}`)
-        .limit(1);
-      const admin = existingAdmin
-        ? (
-            await transaction
-              .update(users)
-              .set({
-                passwordHash,
-                role: "admin",
-                isActive: true,
-                updatedAt: new Date(),
-              })
-              .where(eq(users.id, existingAdmin.id))
-              .returning({ id: users.id })
-          )[0]
-        : (
-            await transaction
-              .insert(users)
-              .values({
-                email,
-                passwordHash,
-                role: "admin",
-              })
-              .returning({ id: users.id })
-          )[0];
-      if (admin) {
-        await transaction
-          .insert(customerProfiles)
-          .values({
-            userId: admin.id,
+    const adminEmail = normalizeEmail(
+      process.env.SEED_ADMIN_EMAIL?.trim() || DEFAULT_ADMIN_EMAIL,
+    );
+    const configuredPassword = process.env.SEED_ADMIN_PASSWORD?.trim();
+    const adminPassword =
+      configuredPassword && configuredPassword.length >= 8
+        ? configuredPassword
+        : DEFAULT_ADMIN_PASSWORD;
+    const passwordHash = await hashPassword(adminPassword);
+    const [existingAdmin] = await transaction
+      .select({ id: users.id })
+      .from(users)
+      .where(sql`lower(${users.email}) = ${adminEmail}`)
+      .limit(1);
+    const admin = existingAdmin
+      ? (
+          await transaction
+            .update(users)
+            .set({
+              passwordHash,
+              role: "admin",
+              isActive: true,
+              updatedAt: new Date(),
+            })
+            .where(eq(users.id, existingAdmin.id))
+            .returning({ id: users.id })
+        )[0]
+      : (
+          await transaction
+            .insert(users)
+            .values({
+              email: adminEmail,
+              passwordHash,
+              role: "admin",
+            })
+            .returning({ id: users.id })
+        )[0];
+    if (admin) {
+      await transaction
+        .insert(customerProfiles)
+        .values({
+          userId: admin.id,
+          firstName: "Operaciones",
+          lastName: "Reludcir",
+        })
+        .onConflictDoUpdate({
+          target: customerProfiles.userId,
+          set: {
             firstName: "Operaciones",
             lastName: "Reludcir",
-          })
-          .onConflictDoNothing();
-      }
+            updatedAt: new Date(),
+          },
+        });
     }
 
     if (availabilitySeed.length > 0) {
@@ -273,7 +286,7 @@ async function seed(): Promise<void> {
   });
 
   console.info(
-    `Seed completed: ${districtSeed.length} districts, 2 services, 3 packages, ${agentSeed.length} agents and weekly availability.`,
+    `Seed completed: ${districtSeed.length} districts, 2 services, 3 packages, ${agentSeed.length} agents, weekly availability and admin ${DEFAULT_ADMIN_EMAIL}.`,
   );
 }
 

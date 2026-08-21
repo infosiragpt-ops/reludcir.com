@@ -12,6 +12,7 @@ type ApiPayload = {
   error?: string | { code?: string; field?: string; message?: string };
   message?: string;
   session?: { expiresAt?: string };
+  user?: { id?: number; email?: string; role?: string };
 };
 
 function getErrorMessage(payload: ApiPayload | null, fallback: string) {
@@ -124,14 +125,17 @@ export function AuthPanel() {
         );
       }
 
+      const privileged = payload?.user?.role === "admin" || payload?.user?.role === "support";
       setFeedback({
         kind: "success",
         message:
-          mode === "login"
-            ? "Sesión iniciada. Abriendo tus reservas…"
-            : "Tu cuenta fue creada. Abriendo tus reservas…",
+          privileged
+            ? "Sesión iniciada. Abriendo el panel de operaciones…"
+            : mode === "login"
+              ? "Sesión iniciada. Abriendo tus reservas…"
+              : "Tu cuenta fue creada. Abriendo tus reservas…",
       });
-      router.replace("/mis-reservas");
+      router.replace(privileged ? "/admin" : "/mis-reservas");
       router.refresh();
     } catch (error) {
       setFeedback({

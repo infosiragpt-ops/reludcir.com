@@ -1,8 +1,30 @@
 export type District = {
   id: number;
   name: string;
+  label: string;
   slug: string;
+  image: string;
 };
+
+const districtImages = {
+  miraflores: "/booking/districts/miraflores.jpg",
+  "san-borja": "/booking/districts/san-borja.png",
+  "san-isidro": "/booking/districts/san-isidro.png",
+  surco: "/booking/districts/surco.png",
+  surquillo: "/booking/districts/surquillo.png",
+  "jesus-maria": "/booking/districts/jesus-maria.png",
+  "san-miguel": "/booking/districts/san-miguel.jpg",
+  barranco: "/booking/districts/barranco.jpg",
+  "magdalena-del-mar": "/booking/districts/magdalena.png",
+} as const;
+
+export function districtCardLabel(slug: string, name: string) {
+  return slug === "magdalena-del-mar" ? "Magdalena" : name;
+}
+
+export function districtCardImage(slug: string) {
+  return districtImages[slug as keyof typeof districtImages] ?? districtImages.miraflores;
+}
 
 export type ServicePlan = {
   id: number;
@@ -23,15 +45,21 @@ export type StaffMember = {
 };
 
 export const districts: District[] = [
-  { id: 1, name: "Miraflores", slug: "miraflores" },
-  { id: 2, name: "San Borja", slug: "san-borja" },
-  { id: 3, name: "San Isidro", slug: "san-isidro" },
-  { id: 4, name: "Surco", slug: "surco" },
-  { id: 5, name: "Surquillo", slug: "surquillo" },
-  { id: 6, name: "Jesús María", slug: "jesus-maria" },
-  { id: 7, name: "San Miguel", slug: "san-miguel" },
-  { id: 8, name: "Barranco", slug: "barranco" },
-  { id: 9, name: "Magdalena del Mar", slug: "magdalena-del-mar" },
+  { id: 1, name: "Miraflores", label: "Miraflores", slug: "miraflores", image: districtImages.miraflores },
+  { id: 2, name: "San Borja", label: "San Borja", slug: "san-borja", image: districtImages["san-borja"] },
+  { id: 3, name: "San Isidro", label: "San Isidro", slug: "san-isidro", image: districtImages["san-isidro"] },
+  { id: 4, name: "Surco", label: "Surco", slug: "surco", image: districtImages.surco },
+  { id: 5, name: "Surquillo", label: "Surquillo", slug: "surquillo", image: districtImages.surquillo },
+  { id: 6, name: "Jesús María", label: "Jesús María", slug: "jesus-maria", image: districtImages["jesus-maria"] },
+  { id: 7, name: "San Miguel", label: "San Miguel", slug: "san-miguel", image: districtImages["san-miguel"] },
+  { id: 8, name: "Barranco", label: "Barranco", slug: "barranco", image: districtImages.barranco },
+  {
+    id: 9,
+    name: "Magdalena del Mar",
+    label: "Magdalena",
+    slug: "magdalena-del-mar",
+    image: districtImages["magdalena-del-mar"],
+  },
 ];
 
 export const servicePlans: ServicePlan[] = [

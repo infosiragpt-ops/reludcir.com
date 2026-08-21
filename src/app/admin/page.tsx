@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { AdminPaymentsPanel } from "@/components/admin/AdminPaymentsPanel";
+import { AdminOperationsPanel } from "@/components/admin/AdminOperationsPanel";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { isPrivilegedStaff } from "@/lib/staff";
 
 export const metadata: Metadata = {
-  title: "Operaciones de pago",
-  description: "Conciliación de Yape, transferencias y reembolsos de Reludcir.",
+  title: "Operaciones",
+  description: "Panel interno de reservas, personal, pagos y catálogo de Reludcir.",
   robots: { index: false, follow: false },
 };
 
-export default async function AdminPaymentsPage() {
+export default async function AdminPage() {
   const user = await getAuthenticatedUser().catch(() => null);
   if (!user) {
     redirect("/mi-cuenta-2");
@@ -22,7 +22,7 @@ export default async function AdminPaymentsPage() {
 
   return (
     <main className="content-page bookings-page">
-      <AdminPaymentsPanel />
+      <AdminOperationsPanel role={user.role} />
     </main>
   );
 }

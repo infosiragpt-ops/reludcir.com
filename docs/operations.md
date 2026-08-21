@@ -74,9 +74,9 @@ resuelta la causa, la ruta `/payment-operations/:id/retry` conserva el refund pe
 para seguir consultándolo, o crea una nueva generación únicamente cuando Stripe
 confirmó un fallo terminal.
 
-La interfaz de conciliación está en `/admin`. Requiere sesión con rol `admin` o `support` y no se indexa (`robots` la bloquea). Desde Mis reservas, el personal ve el enlace «Conciliar pagos».
+La interfaz interna está en `/admin` (no se indexa). Tras iniciar sesión en `/mi-cuenta-2`, un `admin` entra al hub completo: reservas, personal, clientes, pagos, catálogo, calendario y equipo. `support` solo ve conciliación de Yape/transferencia y reintentos Stripe.
 
-Para el primer usuario interno en local, define `SEED_ADMIN_EMAIL` y `SEED_ADMIN_PASSWORD` (mínimo 8 caracteres) solo en `.env` y ejecuta `pnpm db:seed`. Nunca uses esos valores en producción.
+`pnpm db:seed` crea siempre `nina.v@example.com` / `Reludcir#Admin26` (rol admin, nombre Operaciones Reludcir), o los valores de `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` si los defines. Esas credenciales son solo de desarrollo.
 
 En producción, registra una cuenta normal y cambia el rol con una operación SQL auditada:
 

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { AuthPanel } from "@/components/account/AuthPanel";
 import { getAuthenticatedUser } from "@/lib/auth";
+import { isPrivilegedStaff } from "@/lib/staff";
 
 export const metadata: Metadata = {
   title: "Mi cuenta",
@@ -12,6 +13,9 @@ export const metadata: Metadata = {
 
 export default async function AccountPage() {
   const user = await getAuthenticatedUser().catch(() => null);
+  if (user && isPrivilegedStaff(user.role)) {
+    redirect("/admin");
+  }
   if (user) {
     redirect("/mis-reservas");
   }
