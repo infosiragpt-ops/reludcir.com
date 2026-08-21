@@ -67,7 +67,11 @@ function formatDate(value: string | null) {
   }).format(new Date(value));
 }
 
-export function AdminPaymentsPanel() {
+export function AdminPaymentsPanel({
+  embedded = false,
+}: {
+  embedded?: boolean;
+}) {
   const [payments, setPayments] = useState<PendingPayment[]>([]);
   const [refunds, setRefunds] = useState<RefundReview[]>([]);
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
@@ -242,22 +246,24 @@ export function AdminPaymentsPanel() {
   }
 
   return (
-    <section className={styles.dashboard} aria-labelledby="admin-title">
-      <header className={styles.dashboardHeader}>
-        <div>
-          <p className={styles.eyebrow}>Soporte y administración</p>
-          <h1 id="admin-title">Conciliación de pagos</h1>
-          <p>
-            Confirma Yape o transferencias con la constancia externa, cierra reembolsos
-            manuales y reintenta devoluciones Stripe fallidas.
-          </p>
-        </div>
-        <div className={styles.dashboardHeaderActions}>
-          <Link className={styles.secondaryButton} href="/mis-reservas">
-            Mis reservas
-          </Link>
-        </div>
-      </header>
+    <section className={styles.dashboard} aria-labelledby={embedded ? undefined : "admin-title"}>
+      {embedded ? null : (
+        <header className={styles.dashboardHeader}>
+          <div>
+            <p className={styles.eyebrow}>Soporte y administración</p>
+            <h1 id="admin-title">Conciliación de pagos</h1>
+            <p>
+              Confirma Yape o transferencias con la constancia externa, cierra reembolsos
+              manuales y reintenta devoluciones Stripe fallidas.
+            </p>
+          </div>
+          <div className={styles.dashboardHeaderActions}>
+            <Link className={styles.secondaryButton} href="/mis-reservas">
+              Mis reservas
+            </Link>
+          </div>
+        </header>
+      )}
 
       {message ? (
         <p

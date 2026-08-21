@@ -33,6 +33,39 @@ type StaffRow = { id: number; email: string; role: string; isActive: boolean; fi
 type DistrictRow = { id: number; name: string; isActive: boolean };
 type PackageRow = { id: number; name: string; oneTimePrice: string; recurringPrice: string | null };
 type OccupancyRow = { bookingId: number; scheduledStart: string; scheduledEnd: string; districtName: string; agentName: string; status: string };
+type CustomerBookingRow = { id: number; status: string; scheduledStart: string; serviceNameSnapshot: string; totalPriceSnapshot: string; currency: string };
+
+const weekDayOptions = [
+  { id: 1, label: "Lunes" },
+  { id: 2, label: "Martes" },
+  { id: 3, label: "Miércoles" },
+  { id: 4, label: "Jueves" },
+  { id: 5, label: "Viernes" },
+  { id: 6, label: "Sábado" },
+  { id: 0, label: "Domingo" },
+] as const;
+
+const bookingStatusOptions = [
+  { value: "", label: "Todos los estados" },
+  { value: "pending_payment", label: "Pendiente de pago" },
+  { value: "confirmed", label: "Confirmada" },
+  { value: "assigned", label: "Asignada" },
+  { value: "in_progress", label: "En curso" },
+  { value: "completed", label: "Completada" },
+  { value: "cancelled", label: "Cancelada" },
+  { value: "no_show", label: "No se presentó" },
+] as const;
+
+const paymentStatusOptions = [
+  { value: "", label: "Todos los pagos" },
+  { value: "pending", label: "Pendiente" },
+  { value: "paid", label: "Pagado" },
+  { value: "requires_action", label: "Requiere acción" },
+  { value: "failed", label: "Fallido" },
+  { value: "refunded", label: "Reembolsado" },
+  { value: "partially_refunded", label: "Reembolso parcial" },
+  { value: "cancelled", label: "Cancelado" },
+] as const;
 
 const sections: Array<{ id: Section; label: string }> = [
   { id: "bookings", label: "Reservas" },
@@ -81,21 +114,49 @@ export function AdminOperationsPanel({
   const [packages, setPackages] = useState<PackageRow[]>([]);
   const [occupancy, setOccupancy] = useState<OccupancyRow[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<number | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<number | null>(null);
+  const [customerBookings, setCustomerBookings] = useState<CustomerBookingRow[]>([]);
+
+  const occupancyByDay = useMemo(() => {
+    const groups = new Map<string, OccupancyRow[]>();
+    for (const row of occupancy) {
+      const day = new Date(row.scheduledStart).toLocaleDateString("es-PE", {
+        weekday: "long",
+        day: "2-digit",
+        month: "long",
+        timeZone: "America/Lima",
+      });
+      groups.set(day, [...(groups.get(day) ?? []), row]);
+    }
+    return [...groups.entries()];
+  }, [occupancy]);
+
+  const loadLookups = useCallback(async () => {
+    const [agentsResponse, catalogResponse] = await Promise.all([
+      fetch("/api/v1/admin/agents", { credentials: "include" }),
+      fetch("/api/v1/admin/catalog", { credentials: "include" }),
+    ]);
+    const agentsPayload = await agentsResponse.json();
+    const catalogPayload = await catalogResponse.json();
+    if (agentsResponse.ok) setAgents(agentsPayload.agents ?? []);
+    if (catalogResponse.ok) {
+      setDistricts(catalogPayload.districts ?? []);
+      setPackages(catalogPayload.packages ?? []);
+    }
+  }, []);
 
   const loadSection = useCallback(async (current: Section) => {
     setMessage("");
     try {
       if (current === "bookings") {
+        await loadLookups();
         const response = await fetch("/api/v1/admin/bookings", { credentials: "include" });
         const payload = await response.json();
         if (!response.ok) throw new Error(errorMessage(payload, "No pudimos cargar reservas."));
         setBookings(payload.bookings ?? []);
       }
       if (current === "agents") {
-        const response = await fetch("/api/v1/admin/agents", { credentials: "include" });
-        const payload = await response.json();
-        if (!response.ok) throw new Error(errorMessage(payload, "No pudimos cargar personal."));
-        setAgents(payload.agents ?? []);
+        await loadLookups();
       }
       if (current === "customers") {
         const response = await fetch("/api/v1/admin/customers", { credentials: "include" });
@@ -111,6 +172,7 @@ export function AdminOperationsPanel({
         setPackages(payload.packages ?? []);
       }
       if (current === "calendar") {
+        await loadLookups();
         const response = await fetch("/api/v1/admin/calendar", { credentials: "include" });
         const payload = await response.json();
         if (!response.ok) throw new Error(errorMessage(payload, "No pudimos cargar el calendario."));
@@ -125,7 +187,7 @@ export function AdminOperationsPanel({
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Error de carga.");
     }
-  }, []);
+  }, [loadLookups]);
 
   useEffect(() => {
     const requestId = window.setTimeout(() => {
@@ -221,6 +283,17 @@ export function AdminOperationsPanel({
     setMessage("Bloqueo de agenda registrado.");
   }
 
+  async function openCustomer(id: number) {
+    const response = await fetch(`/api/v1/admin/customers/${id}`, { credentials: "include" });
+    const payload = await response.json();
+    if (!response.ok) {
+      setMessage(errorMessage(payload, "No pudimos cargar las reservas del cliente."));
+      return;
+    }
+    setSelectedCustomer(id);
+    setCustomerBookings(payload.bookings ?? []);
+  }
+
   async function deactivateCustomer(id: number, isActive: boolean) {
     await fetch(`/api/v1/admin/customers/${id}`, {
       method: "PATCH",
@@ -312,26 +385,52 @@ export function AdminOperationsPanel({
 
       {message ? <p className={styles.alert}>{message}</p> : null}
 
-      {section === "payments" ? <AdminPaymentsPanel /> : null}
+      {section === "payments" ? <AdminPaymentsPanel embedded /> : null}
 
       {section === "bookings" ? (
         <div>
           <form className={styles.filters} onSubmit={filterBookings}>
             <FieldLabel>
               Estado
-              <input className={styles.fieldControl} name="status" placeholder="confirmed" />
+              <select className={styles.fieldControl} name="status" defaultValue="">
+                {bookingStatusOptions.map((option) => (
+                  <option key={option.value || "all"} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </FieldLabel>
             <FieldLabel>
-              Distrito ID
-              <input className={styles.fieldControl} name="districtId" type="number" />
+              Distrito
+              <select className={styles.fieldControl} name="districtId" defaultValue="">
+                <option value="">Todos</option>
+                {districts.map((district) => (
+                  <option key={district.id} value={district.id}>
+                    {district.name}
+                  </option>
+                ))}
+              </select>
             </FieldLabel>
             <FieldLabel>
-              Agente ID
-              <input className={styles.fieldControl} name="agentId" type="number" />
+              Agente
+              <select className={styles.fieldControl} name="agentId" defaultValue="">
+                <option value="">Todos</option>
+                {agents.map((agent) => (
+                  <option key={agent.id} value={agent.id}>
+                    {agent.name}
+                  </option>
+                ))}
+              </select>
             </FieldLabel>
             <FieldLabel>
               Pago
-              <input className={styles.fieldControl} name="payment" placeholder="pending" />
+              <select className={styles.fieldControl} name="payment" defaultValue="">
+                {paymentStatusOptions.map((option) => (
+                  <option key={option.value || "all-pay"} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </FieldLabel>
             <FieldLabel>
               Desde
@@ -423,7 +522,16 @@ export function AdminOperationsPanel({
                           );
                         }}
                       >
-                        <input name="agentId" type="number" placeholder="Agente ID" required />
+                        <select className={styles.fieldControl} name="agentId" defaultValue={booking.agentId ?? ""} required>
+                          <option value="" disabled>
+                            Elegir agente
+                          </option>
+                          {agents.map((agent) => (
+                            <option key={agent.id} value={agent.id}>
+                              {agent.name}
+                            </option>
+                          ))}
+                        </select>
                         <button className={styles.secondary} type="submit">
                           Asignar
                         </button>
@@ -519,12 +627,30 @@ export function AdminOperationsPanel({
                 }}
               >
                 <FieldLabel>
-                  Distrito ID
-                  <input className={styles.fieldControl} name="districtId" type="number" required />
+                  Distrito
+                  <select className={styles.fieldControl} name="districtId" required defaultValue="">
+                    <option value="" disabled>
+                      Elegir distrito
+                    </option>
+                    {districts.map((district) => (
+                      <option key={district.id} value={district.id}>
+                        {district.name}
+                      </option>
+                    ))}
+                  </select>
                 </FieldLabel>
                 <FieldLabel>
-                  Día (0=dom)
-                  <input className={styles.fieldControl} name="dayOfWeek" type="number" min={0} max={6} required />
+                  Día
+                  <select className={styles.fieldControl} name="dayOfWeek" required defaultValue="">
+                    <option value="" disabled>
+                      Elegir día
+                    </option>
+                    {weekDayOptions.map((day) => (
+                      <option key={day.id} value={day.id}>
+                        {day.label}
+                      </option>
+                    ))}
+                  </select>
                 </FieldLabel>
                 <FieldLabel>
                   Desde
@@ -561,6 +687,7 @@ export function AdminOperationsPanel({
       ) : null}
 
       {section === "customers" ? (
+        <div>
         <div className={styles.tableWrap}>
           <table className={styles.dataTable}>
             <thead>
@@ -585,6 +712,13 @@ export function AdminOperationsPanel({
                     <button
                       className={styles.secondary}
                       type="button"
+                      onClick={() => void openCustomer(customer.id)}
+                    >
+                      Ver reservas
+                    </button>
+                    <button
+                      className={styles.secondary}
+                      type="button"
                       onClick={() => deactivateCustomer(customer.id, !customer.isActive)}
                     >
                       {customer.isActive ? "Desactivar" : "Activar"}
@@ -594,6 +728,42 @@ export function AdminOperationsPanel({
               ))}
             </tbody>
           </table>
+        </div>
+        {selectedCustomer ? (
+          <div className={styles.card}>
+            <h2 className={styles.sectionTitle}>
+              Reservas del cliente #{selectedCustomer}
+            </h2>
+            {customerBookings.length === 0 ? (
+              <p className={styles.muted}>Este cliente no tiene reservas ligadas a la cuenta.</p>
+            ) : (
+              <div className={styles.tableWrap}>
+                <table className={styles.dataTable}>
+                  <thead>
+                    <tr>
+                      <Th>Visita</Th>
+                      <Th>Servicio</Th>
+                      <Th>Estado</Th>
+                      <Th>Importe</Th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {customerBookings.map((booking) => (
+                      <tr key={booking.id}>
+                        <Td>{new Date(booking.scheduledStart).toLocaleString("es-PE")}</Td>
+                        <Td>{booking.serviceNameSnapshot}</Td>
+                        <Td>{booking.status}</Td>
+                        <Td>
+                          {booking.totalPriceSnapshot} {booking.currency}
+                        </Td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        ) : null}
         </div>
       ) : null}
 
@@ -631,29 +801,84 @@ export function AdminOperationsPanel({
       ) : null}
 
       {section === "calendar" ? (
-        <div className={styles.tableWrap}>
-          <table className={styles.dataTable}>
-            <thead>
-              <tr>
-                <Th>Inicio</Th>
-                <Th>Fin</Th>
-                <Th>Agente</Th>
-                <Th>Distrito</Th>
-                <Th>Estado</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {occupancy.map((row) => (
-                <tr key={`${row.bookingId}-${row.scheduledStart}`}>
-                  <Td>{new Date(row.scheduledStart).toLocaleString("es-PE")}</Td>
-                  <Td>{new Date(row.scheduledEnd).toLocaleString("es-PE")}</Td>
-                  <Td>{row.agentName}</Td>
-                  <Td>{row.districtName}</Td>
-                  <Td>{row.status}</Td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div>
+          <form
+            className={styles.filters}
+            onSubmit={async (event) => {
+              event.preventDefault();
+              const form = new FormData(event.currentTarget);
+              const params = new URLSearchParams();
+              for (const key of ["from", "to", "agentId"]) {
+                const value = String(form.get(key) ?? "").trim();
+                if (value) params.set(key, value);
+              }
+              const response = await fetch(`/api/v1/admin/calendar?${params}`, {
+                credentials: "include",
+              });
+              const payload = await response.json();
+              if (!response.ok) {
+                setMessage(errorMessage(payload, "No pudimos filtrar el calendario."));
+                return;
+              }
+              setOccupancy(payload.occupancy ?? []);
+            }}
+          >
+            <FieldLabel>
+              Desde
+              <input className={styles.fieldControl} name="from" type="date" />
+            </FieldLabel>
+            <FieldLabel>
+              Hasta
+              <input className={styles.fieldControl} name="to" type="date" />
+            </FieldLabel>
+            <FieldLabel>
+              Agente
+              <select className={styles.fieldControl} name="agentId" defaultValue="">
+                <option value="">Todos</option>
+                {agents.map((agent) => (
+                  <option key={agent.id} value={agent.id}>
+                    {agent.name}
+                  </option>
+                ))}
+              </select>
+            </FieldLabel>
+            <button className={styles.button} type="submit">
+              Ver ocupación
+            </button>
+          </form>
+          {occupancyByDay.length === 0 ? (
+            <p className={styles.muted}>No hay visitas en el rango seleccionado.</p>
+          ) : (
+            occupancyByDay.map(([day, rows]) => (
+              <div className={styles.card} key={day}>
+                <h2 className={styles.sectionTitle}>{day}</h2>
+                <div className={styles.tableWrap}>
+                  <table className={styles.dataTable}>
+                    <thead>
+                      <tr>
+                        <Th>Inicio</Th>
+                        <Th>Fin</Th>
+                        <Th>Agente</Th>
+                        <Th>Distrito</Th>
+                        <Th>Estado</Th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((row) => (
+                        <tr key={`${row.bookingId}-${row.scheduledStart}`}>
+                          <Td>{new Date(row.scheduledStart).toLocaleString("es-PE")}</Td>
+                          <Td>{new Date(row.scheduledEnd).toLocaleString("es-PE")}</Td>
+                          <Td>{row.agentName}</Td>
+                          <Td>{row.districtName}</Td>
+                          <Td>{row.status}</Td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       ) : null}
 
