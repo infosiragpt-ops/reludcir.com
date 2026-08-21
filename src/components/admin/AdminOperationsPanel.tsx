@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 
 import { AdminPaymentsPanel } from "@/components/admin/AdminPaymentsPanel";
 import { canAccessAdminSection, type AdminSection } from "@/lib/staff";
@@ -48,6 +48,18 @@ function errorMessage(payload: { error?: string | { message?: string } } | null,
   if (typeof payload?.error === "string") return payload.error;
   if (payload?.error && typeof payload.error.message === "string") return payload.error.message;
   return fallback;
+}
+
+function FieldLabel({ children }: { children: ReactNode }) {
+  return <label className={styles.fieldLabel}>{children}</label>;
+}
+
+function Th({ children }: { children?: ReactNode }) {
+  return <th className={styles.th}>{children}</th>;
+}
+
+function Td({ children }: { children?: ReactNode }) {
+  return <td className={styles.td}>{children}</td>;
 }
 
 export function AdminOperationsPanel({
@@ -275,8 +287,10 @@ export function AdminOperationsPanel({
       <header className={styles.header}>
         <div>
           <p className={styles.muted}>Operaciones Reludcir</p>
-          <h1>Panel de administración</h1>
-          <p>Gestiona reservas, personal, clientes, pagos y catálogo desde un solo lugar.</p>
+          <h1 className={styles.title}>Panel de administración</h1>
+          <p className={styles.lede}>
+            Gestiona reservas, personal, clientes, pagos y catálogo desde un solo lugar.
+          </p>
         </div>
         <Link className={styles.secondary} href="/mis-reservas">
           Mis reservas
@@ -288,7 +302,7 @@ export function AdminOperationsPanel({
           <button
             key={item.id}
             type="button"
-            data-active={section === item.id}
+            className={section === item.id ? styles.navButtonActive : styles.navButton}
             onClick={() => setSection(item.id)}
           >
             {item.label}
@@ -303,71 +317,71 @@ export function AdminOperationsPanel({
       {section === "bookings" ? (
         <div>
           <form className={styles.filters} onSubmit={filterBookings}>
-            <label>
+            <FieldLabel>
               Estado
-              <input name="status" placeholder="confirmed" />
-            </label>
-            <label>
+              <input className={styles.fieldControl} name="status" placeholder="confirmed" />
+            </FieldLabel>
+            <FieldLabel>
               Distrito ID
-              <input name="districtId" type="number" />
-            </label>
-            <label>
+              <input className={styles.fieldControl} name="districtId" type="number" />
+            </FieldLabel>
+            <FieldLabel>
               Agente ID
-              <input name="agentId" type="number" />
-            </label>
-            <label>
+              <input className={styles.fieldControl} name="agentId" type="number" />
+            </FieldLabel>
+            <FieldLabel>
               Pago
-              <input name="payment" placeholder="pending" />
-            </label>
-            <label>
+              <input className={styles.fieldControl} name="payment" placeholder="pending" />
+            </FieldLabel>
+            <FieldLabel>
               Desde
-              <input name="from" type="date" />
-            </label>
-            <label>
+              <input className={styles.fieldControl} name="from" type="date" />
+            </FieldLabel>
+            <FieldLabel>
               Hasta
-              <input name="to" type="date" />
-            </label>
+              <input className={styles.fieldControl} name="to" type="date" />
+            </FieldLabel>
             <button className={styles.button} type="submit">
               Filtrar
             </button>
           </form>
           <div className={styles.tableWrap}>
-            <table>
+            <table className={styles.dataTable}>
               <thead>
                 <tr>
-                  <th>Pedido</th>
-                  <th>Cliente</th>
-                  <th>Visita</th>
-                  <th>Estado / pago</th>
-                  <th>Acciones</th>
+                  <Th>Pedido</Th>
+                  <Th>Cliente</Th>
+                  <Th>Visita</Th>
+                  <Th>Estado / pago</Th>
+                  <Th>Acciones</Th>
                 </tr>
               </thead>
               <tbody>
                 {bookings.map((booking) => (
                   <tr key={booking.id}>
-                    <td>
+                    <Td>
                       {booking.orderReference}
                       <br />
                       <span className={styles.muted}>
                         {booking.bookingMode === "recurring" ? "Serie" : "Única"} · {booking.districtName}
                       </span>
-                    </td>
-                    <td>
+                    </Td>
+                    <Td>
                       {booking.customerName}
                       <br />
                       <span className={styles.muted}>{booking.customerEmail}</span>
-                    </td>
-                    <td>
+                    </Td>
+                    <Td>
                       {new Date(booking.scheduledStart).toLocaleString("es-PE")}
                       <br />
                       {booking.serviceNameSnapshot}
-                    </td>
-                    <td>
+                    </Td>
+                    <Td>
                       {booking.status}
                       <br />
                       {booking.paymentProvider ?? "—"} {booking.paymentStatus ?? ""}
-                    </td>
-                    <td>
+                    </Td>
+                    <Td>
                       <button className={styles.secondary} type="button" onClick={() => setSelectedBooking(booking.id)}>
                         Detalle
                       </button>
@@ -433,7 +447,7 @@ export function AdminOperationsPanel({
                       {selectedBooking === booking.id ? (
                         <p className={styles.ok}>ID {booking.id} · grupo {booking.recurrenceGroupId ?? "n/a"}</p>
                       ) : null}
-                    </td>
+                    </Td>
                   </tr>
                 ))}
               </tbody>
@@ -445,22 +459,22 @@ export function AdminOperationsPanel({
       {section === "agents" ? (
         <div>
           <form className={styles.form} onSubmit={createAgent}>
-            <label>
+            <FieldLabel>
               Nombre
-              <input name="firstName" required />
-            </label>
-            <label>
+              <input className={styles.fieldControl} name="firstName" required />
+            </FieldLabel>
+            <FieldLabel>
               Apellido
-              <input name="lastName" />
-            </label>
-            <label>
+              <input className={styles.fieldControl} name="lastName" />
+            </FieldLabel>
+            <FieldLabel>
               Profesión
-              <input name="profession" defaultValue="Agente de Limpieza" />
-            </label>
-            <label>
+              <input className={styles.fieldControl} name="profession" defaultValue="Agente de Limpieza" />
+            </FieldLabel>
+            <FieldLabel>
               Foto URL
-              <input name="avatarUrl" />
-            </label>
+              <input className={styles.fieldControl} name="avatarUrl" />
+            </FieldLabel>
             <button className={styles.button} type="submit">
               Crear agente
             </button>
@@ -504,39 +518,39 @@ export function AdminOperationsPanel({
                   setMessage("Disponibilidad semanal actualizada.");
                 }}
               >
-                <label>
+                <FieldLabel>
                   Distrito ID
-                  <input name="districtId" type="number" required />
-                </label>
-                <label>
+                  <input className={styles.fieldControl} name="districtId" type="number" required />
+                </FieldLabel>
+                <FieldLabel>
                   Día (0=dom)
-                  <input name="dayOfWeek" type="number" min={0} max={6} required />
-                </label>
-                <label>
+                  <input className={styles.fieldControl} name="dayOfWeek" type="number" min={0} max={6} required />
+                </FieldLabel>
+                <FieldLabel>
                   Desde
-                  <input name="startsAt" defaultValue="07:00" />
-                </label>
-                <label>
+                  <input className={styles.fieldControl} name="startsAt" defaultValue="07:00" />
+                </FieldLabel>
+                <FieldLabel>
                   Hasta
-                  <input name="endsAt" defaultValue="19:00" />
-                </label>
+                  <input className={styles.fieldControl} name="endsAt" defaultValue="19:00" />
+                </FieldLabel>
                 <button className={styles.secondary} type="submit">
                   Guardar horario
                 </button>
               </form>
               <form className={styles.form} onSubmit={(event) => blockAgent(event, agent.id)}>
-                <label>
+                <FieldLabel>
                   Bloquear desde
-                  <input name="startsAt" type="datetime-local" required />
-                </label>
-                <label>
+                  <input className={styles.fieldControl} name="startsAt" type="datetime-local" required />
+                </FieldLabel>
+                <FieldLabel>
                   Hasta
-                  <input name="endsAt" type="datetime-local" required />
-                </label>
-                <label>
+                  <input className={styles.fieldControl} name="endsAt" type="datetime-local" required />
+                </FieldLabel>
+                <FieldLabel>
                   Motivo
-                  <input name="reason" />
-                </label>
+                  <input className={styles.fieldControl} name="reason" />
+                </FieldLabel>
                 <button className={styles.secondary} type="submit">
                   Bloquear fechas
                 </button>
@@ -548,26 +562,26 @@ export function AdminOperationsPanel({
 
       {section === "customers" ? (
         <div className={styles.tableWrap}>
-          <table>
+          <table className={styles.dataTable}>
             <thead>
               <tr>
-                <th>Cliente</th>
-                <th>Reservas</th>
-                <th>Estado</th>
-                <th></th>
+                <Th>Cliente</Th>
+                <Th>Reservas</Th>
+                <Th>Estado</Th>
+                <Th></Th>
               </tr>
             </thead>
             <tbody>
               {customers.map((customer) => (
                 <tr key={customer.id}>
-                  <td>
+                  <Td>
                     {customer.name}
                     <br />
                     <span className={styles.muted}>{customer.email}</span>
-                  </td>
-                  <td>{customer.bookingsCount}</td>
-                  <td>{customer.isActive ? "Activo" : "Inactivo"}</td>
-                  <td>
+                  </Td>
+                  <Td>{customer.bookingsCount}</Td>
+                  <Td>{customer.isActive ? "Activo" : "Inactivo"}</Td>
+                  <Td>
                     <button
                       className={styles.secondary}
                       type="button"
@@ -575,7 +589,7 @@ export function AdminOperationsPanel({
                     >
                       {customer.isActive ? "Desactivar" : "Activar"}
                     </button>
-                  </td>
+                  </Td>
                 </tr>
               ))}
             </tbody>
@@ -586,26 +600,26 @@ export function AdminOperationsPanel({
       {section === "catalog" ? (
         <form onSubmit={saveCatalog}>
           <div className={styles.card}>
-            <h2>Distritos</h2>
+            <h2 className={styles.sectionTitle}>Distritos</h2>
             {districts.map((district) => (
-              <label key={district.id}>
+              <label className={styles.checkLabel} key={district.id}>
                 <input name={`district-${district.id}`} type="checkbox" defaultChecked={district.isActive} /> {district.name}
               </label>
             ))}
           </div>
           <div className={styles.card}>
-            <h2>Paquetes 4/6/8 horas</h2>
+            <h2 className={styles.sectionTitle}>Paquetes 4/6/8 horas</h2>
             {packages.map((item) => (
               <div className={styles.form} key={item.id}>
                 <strong>{item.name}</strong>
-                <label>
+                <FieldLabel>
                   Único
-                  <input name={`one-${item.id}`} defaultValue={item.oneTimePrice} />
-                </label>
-                <label>
+                  <input className={styles.fieldControl} name={`one-${item.id}`} defaultValue={item.oneTimePrice} />
+                </FieldLabel>
+                <FieldLabel>
                   Recurrente
-                  <input name={`rec-${item.id}`} defaultValue={item.recurringPrice ?? ""} />
-                </label>
+                  <input className={styles.fieldControl} name={`rec-${item.id}`} defaultValue={item.recurringPrice ?? ""} />
+                </FieldLabel>
               </div>
             ))}
             <p className={styles.muted}>Limpieza para empresas permanece como «próximamente».</p>
@@ -618,24 +632,24 @@ export function AdminOperationsPanel({
 
       {section === "calendar" ? (
         <div className={styles.tableWrap}>
-          <table>
+          <table className={styles.dataTable}>
             <thead>
               <tr>
-                <th>Inicio</th>
-                <th>Fin</th>
-                <th>Agente</th>
-                <th>Distrito</th>
-                <th>Estado</th>
+                <Th>Inicio</Th>
+                <Th>Fin</Th>
+                <Th>Agente</Th>
+                <Th>Distrito</Th>
+                <Th>Estado</Th>
               </tr>
             </thead>
             <tbody>
               {occupancy.map((row) => (
                 <tr key={`${row.bookingId}-${row.scheduledStart}`}>
-                  <td>{new Date(row.scheduledStart).toLocaleString("es-PE")}</td>
-                  <td>{new Date(row.scheduledEnd).toLocaleString("es-PE")}</td>
-                  <td>{row.agentName}</td>
-                  <td>{row.districtName}</td>
-                  <td>{row.status}</td>
+                  <Td>{new Date(row.scheduledStart).toLocaleString("es-PE")}</Td>
+                  <Td>{new Date(row.scheduledEnd).toLocaleString("es-PE")}</Td>
+                  <Td>{row.agentName}</Td>
+                  <Td>{row.districtName}</Td>
+                  <Td>{row.status}</Td>
                 </tr>
               ))}
             </tbody>
@@ -646,48 +660,48 @@ export function AdminOperationsPanel({
       {section === "staff" ? (
         <div>
           <form className={styles.form} onSubmit={createStaff}>
-            <label>
+            <FieldLabel>
               Nombre
-              <input name="firstName" required />
-            </label>
-            <label>
+              <input className={styles.fieldControl} name="firstName" required />
+            </FieldLabel>
+            <FieldLabel>
               Apellido
-              <input name="lastName" required />
-            </label>
-            <label>
+              <input className={styles.fieldControl} name="lastName" required />
+            </FieldLabel>
+            <FieldLabel>
               Correo
-              <input name="email" type="email" required />
-            </label>
-            <label>
+              <input className={styles.fieldControl} name="email" type="email" required />
+            </FieldLabel>
+            <FieldLabel>
               Contraseña
-              <input name="password" type="password" minLength={8} required />
-            </label>
-            <label>
+              <input className={styles.fieldControl} name="password" type="password" minLength={8} required />
+            </FieldLabel>
+            <FieldLabel>
               Rol
-              <select name="role" defaultValue="support">
+              <select className={styles.fieldControl} name="role" defaultValue="support">
                 <option value="admin">admin</option>
                 <option value="support">support</option>
               </select>
-            </label>
+            </FieldLabel>
             <button className={styles.button} type="submit">
               Crear usuario interno
             </button>
           </form>
           <div className={styles.tableWrap}>
-            <table>
+            <table className={styles.dataTable}>
               <thead>
                 <tr>
-                  <th>Correo</th>
-                  <th>Rol</th>
-                  <th>Estado</th>
+                  <Th>Correo</Th>
+                  <Th>Rol</Th>
+                  <Th>Estado</Th>
                 </tr>
               </thead>
               <tbody>
                 {staff.map((user) => (
                   <tr key={user.id}>
-                    <td>{user.email}</td>
-                    <td>{user.role}</td>
-                    <td>{user.isActive ? "Activo" : "Inactivo"}</td>
+                    <Td>{user.email}</Td>
+                    <Td>{user.role}</Td>
+                    <Td>{user.isActive ? "Activo" : "Inactivo"}</Td>
                   </tr>
                 ))}
               </tbody>

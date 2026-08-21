@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { AdminOperationsPanel } from "@/components/admin/AdminOperationsPanel";
+import { AdminPanel } from "@/components/admin/AdminPanel";
 import { getAuthenticatedUser } from "@/lib/auth";
 import { isPrivilegedStaff } from "@/lib/staff";
 
@@ -22,7 +22,7 @@ export default async function AdminPage() {
 
   return (
     <main className="content-page bookings-page">
-      <AdminOperationsPanel role={user.role} />
+      <AdminPanel role={user.role} />
     </main>
   );
 }

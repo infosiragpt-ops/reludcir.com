@@ -4,12 +4,21 @@ import test from "node:test";
 import {
   createGoogleOAuthState,
   googleAccountNames,
+  googleLoginErrorMessage,
   googlePostLoginPath,
   googleRedirectUri,
   resolveSiteOrigin,
   sanitizeGoogleReturnTo,
   verifyGoogleOAuthState,
 } from "../src/lib/google-oauth";
+
+test("google login errors stay on the account page copy", () => {
+  assert.equal(
+    googleLoginErrorMessage("google_unavailable"),
+    "El acceso con Google no está configurado todavía.",
+  );
+  assert.equal(googleLoginErrorMessage("not-a-real-error"), undefined);
+});
 
 test("google returnTo only allows the admin hub or home", () => {
   assert.equal(sanitizeGoogleReturnTo("/admin"), "/admin");

@@ -254,7 +254,7 @@
   color: var(--color-ink, #102925);
   font: inherit;
   font-weight: 750;
-  text-decoration: none;
+  cursor: pointer;
 }
 
 .legalCopy {

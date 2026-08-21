@@ -11,7 +11,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function AccountPage() {
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string | string[] }>;
+}) {
   const user = await getAuthenticatedUser().catch(() => null);
   if (user && isPrivilegedStaff(user.role)) {
     redirect("/admin");
@@ -20,9 +24,11 @@ export default async function AccountPage() {
     redirect("/mis-reservas");
   }
 
+  const { error } = await searchParams;
+
   return (
     <main className="content-page account-page">
-      <AuthPanel />
+      <AuthPanel initialError={typeof error === "string" ? error : error?.[0]} />
     </main>
   );
 }

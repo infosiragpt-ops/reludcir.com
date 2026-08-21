@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, KeyboardEvent, useEffect, useState } from "react";
+import { FormEvent, KeyboardEvent, useState } from "react";
+
+import { googleLoginErrorMessage } from "@/lib/google-oauth";
 
 import styles from "./account.module.css";
 
@@ -41,26 +43,14 @@ async function readPayload(response: Response): Promise<ApiPayload | null> {
   return (await response.json()) as ApiPayload;
 }
 
-export function AuthPanel() {
+export function AuthPanel({ initialError }: { initialError?: string }) {
   const router = useRouter();
   const [mode, setMode] = useState<AuthMode>("login");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const initialGoogleError = googleLoginErrorMessage(initialError);
   const [feedback, setFeedback] = useState<
     { kind: "error" | "success"; message: string } | undefined
-  >();
-
-  useEffect(() => {
-    const error = new URLSearchParams(window.location.search).get("error");
-    const messages: Record<string, string> = {
-      google_unavailable: "El acceso con Google no está configurado todavía.",
-      google_denied: "Cancelaste el acceso con Google.",
-      google_inactive: "Esta cuenta está desactivada. Escribe a operaciones.",
-      google_failed: "No pudimos completar el acceso con Google. Inténtalo de nuevo.",
-    };
-    if (error && messages[error]) {
-      setFeedback({ kind: "error", message: messages[error] });
-    }
-  }, []);
+  >(initialGoogleError ? { kind: "error", message: initialGoogleError } : undefined);
 
   function selectMode(nextMode: AuthMode) {
     setMode(nextMode);
@@ -322,9 +312,11 @@ export function AuthPanel() {
           <p className={styles.authDivider} role="separator">
             o
           </p>
-          <a className={styles.oauthButton} href="/api/v1/auth/google/start">
-            Continuar con Google
-          </a>
+          <form action="/api/v1/auth/google/start" method="get">
+            <button className={styles.oauthButton} type="submit">
+              Continuar con Google
+            </button>
+          </form>
 
           <p className={styles.legalCopy}>
             Al crear una cuenta aceptas el tratamiento de tus datos según nuestra{" "}

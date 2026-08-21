@@ -42,6 +42,19 @@ export function sanitizeGoogleReturnTo(value: string | null | undefined): Google
   return value === "/admin" ? "/admin" : "/";
 }
 
+const GOOGLE_LOGIN_ERRORS: Record<string, string> = {
+  google_unavailable: "El acceso con Google no está configurado todavía.",
+  google_denied: "Cancelaste el acceso con Google.",
+  google_inactive: "Esta cuenta está desactivada. Escribe a operaciones.",
+  google_failed: "No pudimos completar el acceso con Google. Inténtalo de nuevo.",
+};
+
+export function googleLoginErrorMessage(error: string | string[] | undefined) {
+  const code = Array.isArray(error) ? error[0] : error;
+  if (!code) return undefined;
+  return GOOGLE_LOGIN_ERRORS[code];
+}
+
 export function resolveSiteOrigin(requestUrl: URL) {
   const configured = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
   if (configured) {
