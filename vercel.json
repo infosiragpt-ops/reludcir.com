@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/v1/internal/dispatch-notifications",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/v1/internal/expire-bookings",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/v1/internal/process-payment-operations",
+      "schedule": "* * * * *"
+    }
+  ]
+}

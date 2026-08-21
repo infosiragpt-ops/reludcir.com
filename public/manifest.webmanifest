@@ -1,0 +1,17 @@
+{
+  "name": "Reludcir",
+  "short_name": "Reludcir",
+  "description": "Servicios de limpieza a domicilio",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7fdfb",
+  "theme_color": "#1b5fc1",
+  "icons": [
+    {
+      "src": "/reludcir-fav.png",
+      "sizes": "47x47",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

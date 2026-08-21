@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: reludcir-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-reludcir}
+      POSTGRES_USER: ${POSTGRES_USER:-reludcir}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-reludcir_local}
+      TZ: America/Lima
+      PGTZ: America/Lima
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - reludcir_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} || exit 1",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    stop_grace_period: 30s
+
+volumes:
+  reludcir_postgres_data:

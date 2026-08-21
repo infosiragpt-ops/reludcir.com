@@ -1,0 +1,519 @@
+.authPanel,
+.dashboard,
+.dashboardState {
+  --color-ink: var(--text, #0c122d);
+  --color-muted: var(--text-body, #575c74);
+  --color-primary: var(--primary, #1b5fc1);
+  --color-primary-dark: var(--primary-hover, #164fa4);
+  --color-accent: var(--teal-bright, #00dbac);
+  --color-border: var(--border, #dce3ec);
+  --color-border-strong: var(--border, #dce3ec);
+  --color-surface: var(--surface, #fff);
+  --color-soft: var(--surface-soft, #f5f7fa);
+  --radius-large: var(--radius-lg, 1.5rem);
+}
+
+.authPanel,
+.dashboard {
+  width: min(1120px, calc(100% - 2rem));
+  margin: 0 auto;
+}
+
+.authPanel {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(340px, 1fr);
+  gap: clamp(2rem, 6vw, 5rem);
+  align-items: center;
+  padding-block: clamp(3rem, 8vw, 7rem);
+}
+
+.authIntro h1,
+.dashboardHeader h1,
+.dashboardState h2 {
+  margin: 0;
+  color: var(--color-ink, #102925);
+  font-size: clamp(2rem, 5vw, 3.75rem);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.authIntro > p:not(.eyebrow),
+.dashboardHeader p,
+.dashboardState p {
+  color: var(--color-muted, #526762);
+  line-height: 1.7;
+}
+
+.eyebrow {
+  margin: 0 0 0.85rem;
+  color: var(--color-primary, #168f7c);
+  font-size: 0.78rem;
+  font-weight: 750;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.benefitList {
+  display: grid;
+  gap: 0.8rem;
+  margin: 1.8rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.benefitList li {
+  position: relative;
+  padding-left: 1.6rem;
+  color: var(--color-ink, #102925);
+  line-height: 1.55;
+}
+
+.benefitList li::before {
+  position: absolute;
+  top: 0.54em;
+  left: 0;
+  width: 0.62rem;
+  height: 0.62rem;
+  border-radius: 50%;
+  background: var(--color-accent, #f8bb46);
+  content: "";
+}
+
+.authCard,
+.bookingCard,
+.dashboardState {
+  border: 1px solid var(--color-border, #dce7e4);
+  border-radius: var(--radius-large, 1.25rem);
+  background: var(--color-surface, #fff);
+  box-shadow: 0 18px 55px rgb(16 41 37 / 8%);
+}
+
+.authCard {
+  padding: clamp(1.25rem, 4vw, 2.25rem);
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+  padding: 0.3rem;
+  border-radius: 0.85rem;
+  background: var(--color-soft, #edf6f3);
+}
+
+.tab,
+.activeTab {
+  min-height: 2.9rem;
+  border: 0;
+  border-radius: 0.65rem;
+  background: transparent;
+  color: var(--color-muted, #526762);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.activeTab {
+  background: var(--color-surface, #fff);
+  color: var(--color-ink, #102925);
+  box-shadow: 0 2px 12px rgb(16 41 37 / 7%);
+}
+
+.formTitle {
+  margin: 2rem 0 0.35rem;
+  color: var(--color-ink, #102925);
+  font-size: 1.55rem;
+}
+
+.formDescription,
+.legalCopy,
+.policyNote {
+  color: var(--color-muted, #526762);
+  line-height: 1.55;
+}
+
+.form {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.fieldGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.45rem;
+  color: var(--color-ink, #102925);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--color-border-strong, #bdcfca);
+  border-radius: 0.7rem;
+  background: var(--color-surface, #fff);
+  color: var(--color-ink, #102925);
+  font: inherit;
+  font-weight: 500;
+}
+
+.field textarea {
+  min-height: 6rem;
+  resize: vertical;
+}
+
+.field input:focus-visible,
+.field select:focus-visible,
+.field textarea:focus-visible,
+.tab:focus-visible,
+.activeTab:focus-visible,
+.primaryButton:focus-visible,
+.actionBar button:focus-visible,
+.closeButton:focus-visible,
+.primaryLink:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-primary, #168f7c) 35%, transparent);
+  outline-offset: 2px;
+}
+
+.checkField {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  color: var(--color-muted, #526762);
+  font-size: 0.92rem;
+}
+
+.checkField input {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--color-primary, #168f7c);
+}
+
+.primaryButton,
+.primaryLink {
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.72rem 1.15rem;
+  border: 1px solid var(--color-primary, #168f7c);
+  border-radius: 0.72rem;
+  background: var(--color-primary, #168f7c);
+  color: #fff;
+  font: inherit;
+  font-weight: 750;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.primaryButton:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.legalCopy {
+  margin: 1.1rem 0 0;
+  font-size: 0.82rem;
+}
+
+.legalCopy a {
+  color: var(--color-primary-dark, #0d6e60);
+  font-weight: 700;
+}
+
+.errorMessage,
+.successMessage {
+  margin: 0;
+  padding: 0.8rem 0.95rem;
+  border-radius: 0.65rem;
+  line-height: 1.5;
+}
+
+.errorMessage {
+  background: #fff0ef;
+  color: #9b2c26;
+}
+
+.successMessage {
+  background: #eaf8f2;
+  color: #176448;
+}
+
+.dashboard {
+  padding-block: clamp(2.5rem, 7vw, 6rem);
+}
+
+.dashboardHeader {
+  display: flex;
+  gap: 2rem;
+  align-items: end;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.dashboardHeader h1 {
+  font-size: clamp(2.2rem, 5vw, 3.6rem);
+}
+
+.dashboardHeader p:not(.eyebrow) {
+  margin-bottom: 0;
+}
+
+.dashboardHeaderActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+
+.secondaryButton {
+  min-height: 3rem;
+  border: 1px solid var(--color-primary, #168f7c);
+  border-radius: 0.7rem;
+  padding: 0.72rem 1rem;
+  background: transparent;
+  color: var(--color-primary, #168f7c);
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.secondaryButton:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.bookingList {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.bookingCard {
+  overflow: hidden;
+  padding: clamp(1.15rem, 3vw, 1.75rem);
+}
+
+.bookingCardHeader {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.bookingCardHeader h2 {
+  margin: 0.2rem 0;
+  color: var(--color-ink, #102925);
+  font-size: clamp(1.25rem, 3vw, 1.7rem);
+}
+
+.bookingCardHeader p {
+  margin: 0;
+  color: var(--color-muted, #526762);
+}
+
+.bookingReference {
+  color: var(--color-primary-dark, #0d6e60) !important;
+  font-size: 0.78rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.status {
+  flex: 0 0 auto;
+  padding: 0.42rem 0.7rem;
+  border-radius: 999px;
+  background: var(--color-soft, #edf6f3);
+  color: var(--color-primary-dark, #0d6e60);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.status[data-status="cancelled"],
+.status[data-status="no_show"] {
+  background: #fff0ef;
+  color: #9b2c26;
+}
+
+.status[data-status="completed"] {
+  background: #eff3f2;
+  color: #526762;
+}
+
+.bookingDetails {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.15rem;
+  margin: 1.5rem 0 0;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--color-border, #dce7e4);
+}
+
+.bookingDetails div {
+  min-width: 0;
+}
+
+.bookingDetails dt {
+  margin-bottom: 0.28rem;
+  color: var(--color-muted, #526762);
+  font-size: 0.75rem;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.bookingDetails dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--color-ink, #102925);
+  line-height: 1.5;
+}
+
+.wideDetail {
+  grid-column: span 3;
+}
+
+.actionBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1.4rem;
+}
+
+.actionBar button,
+.closeButton {
+  min-height: 2.6rem;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid var(--color-border-strong, #bdcfca);
+  border-radius: 0.65rem;
+  background: var(--color-surface, #fff);
+  color: var(--color-ink, #102925);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.actionForm {
+  display: grid;
+  gap: 1rem;
+  margin: 1.4rem -1.75rem -1.75rem;
+  padding: 1.35rem 1.75rem 1.75rem;
+  border-top: 1px solid var(--color-border, #dce7e4);
+  background: var(--color-soft, #f4faf8);
+}
+
+.actionFormHeader {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.actionFormHeader h3 {
+  margin: 0;
+  color: var(--color-ink, #102925);
+  font-size: 1.1rem;
+}
+
+.closeButton {
+  min-height: auto;
+  border-color: transparent;
+  background: transparent;
+}
+
+.policyNote {
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.dashboardState {
+  width: min(720px, calc(100% - 2rem));
+  margin: clamp(3rem, 10vw, 8rem) auto;
+  padding: clamp(2rem, 6vw, 4.5rem);
+  text-align: center;
+}
+
+.dashboardState h2 {
+  font-size: clamp(1.7rem, 4vw, 2.6rem);
+}
+
+.dashboardState .primaryButton,
+.dashboardState .primaryLink {
+  margin-top: 0.75rem;
+}
+
+.loader {
+  width: 2.5rem;
+  height: 2.5rem;
+  margin: 0 auto 1.25rem;
+  border: 3px solid var(--color-border, #dce7e4);
+  border-top-color: var(--color-primary, #168f7c);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader {
+    animation: none;
+  }
+}
+
+@media (max-width: 780px) {
+  .authPanel {
+    grid-template-columns: 1fr;
+    padding-block: 2.5rem;
+  }
+
+  .dashboardHeader,
+  .bookingCardHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .bookingDetails {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wideDetail {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 520px) {
+  .fieldGrid,
+  .bookingDetails {
+    grid-template-columns: 1fr;
+  }
+
+  .wideDetail {
+    grid-column: auto;
+  }
+
+  .actionForm {
+    margin-inline: -1.15rem;
+    margin-bottom: -1.15rem;
+    padding-inline: 1.15rem;
+  }
+
+  .actionBar button {
+    flex: 1 1 auto;
+  }
+}
